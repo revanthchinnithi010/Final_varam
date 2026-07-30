@@ -320,17 +320,14 @@ export default function TabletScreen() {
         source={{ uri: WEB_URL }}
         style={styles.webview}
         userAgent={TABLET_UA}
-        // --app-safe-top: 0px — the native spacer above the WebView already
-        // reserves insets.top, so web components that read this variable (e.g.
-        // AppHeader) must NOT add env(safe-area-inset-top) on top of it.
-        injectedJavaScriptBeforeContentLoaded={`
-          (function() {
-            var s = document.createElement('style');
-            s.textContent = ':root { --app-safe-top: 0px !important; }';
-            document.documentElement.appendChild(s);
-          })();
-          true;
-        `}
+        // Signal to the web app that the Expo native layer has already reserved
+        // insets.top as a spacer above this WebView.  The web app reads
+        // window.__EXPO_TABLET__ at render time and sets safe-area padding to
+        // 0px so it doesn't double-count.  A plain window assignment is used
+        // (not DOM manipulation) because injectedJavaScriptBeforeContentLoaded
+        // fires before the document element exists on Android, making any
+        // document.* calls unreliable at this stage.
+        injectedJavaScriptBeforeContentLoaded={"window.__EXPO_TABLET__ = true; true;"}
         injectedJavaScript={buildOrientationScript(isLandscape) + "\n" + RUBBER_BAND_JS}
         injectedJavaScriptForMainFrameOnly
         javaScriptEnabled

@@ -3,9 +3,14 @@
  * Markets, and Select Alert Type overlays.
  *
  * Spec (single source of truth):
- *   • Total height : calc(56px + var(--app-safe-top, env(safe-area-inset-top)))
- *   • Top padding  : var(--app-safe-top, env(safe-area-inset-top))  — places content below notch on iOS.
- *                    Tablet WebView overrides --app-safe-top to 0px (native spacer already reserves the inset).
+ *   • Total height : calc(56px + safeTop)
+ *   • Top padding  : safeTop  — places content below notch.
+ *                    safeTop = env(safe-area-inset-top) normally.
+ *                    safeTop = 0px inside the Expo tablet WebView: the native
+ *                    layer already reserves insets.top as a spacer above the
+ *                    WebView (index.tsx), so adding it again here double-counts.
+ *                    Detected via window.__EXPO_TABLET__ set by
+ *                    injectedJavaScriptBeforeContentLoaded.
  *   • Side padding : 16px each side
  *   • Gap          : 12px between back button and title
  *   • Back button  : 32 × 32 circle, transparent bg, no border
@@ -29,17 +34,25 @@ interface AppHeaderProps {
   children?: ReactNode;
 }
 
+/**
+ * Returns the CSS value to use for the top safe-area padding.
+ * Called at render time so it picks up window.__EXPO_TABLET__ reliably
+ * (the flag is set by injectedJavaScriptBeforeContentLoaded before any React
+ * code runs, but reading it at module-load time would be fragile on Android
+ * where injection timing relative to the JS bundle can vary).
+ */
+function getSafeTop(): string {
+  if (typeof window !== "undefined" && (window as unknown as Record<string, unknown>).__EXPO_TABLET__) {
+    return "0px";
+  }
+  return "env(safe-area-inset-top)";
+}
+
 const HEADER_BASE: CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 12,
   padding: "0 16px",
-  // Use --app-safe-top so the Expo/tablet WebView (which already reserves the
-  // status-bar height as a native spacer above the WebView) can override this
-  // to 0px and avoid double-counting the inset.  On plain web it falls back to
-  // env(safe-area-inset-top) and behaves exactly as before.
-  paddingTop: "var(--app-safe-top, env(safe-area-inset-top))",
-  height: "calc(56px + var(--app-safe-top, env(safe-area-inset-top)))",
   borderBottom: "1px solid rgba(255,255,255,0.07)",
   flexShrink: 0,
 };
@@ -74,8 +87,14 @@ export function AppHeader({
   background = "#000000",
   children,
 }: AppHeaderProps) {
+  const safeTop = getSafeTop();
   return (
-    <div style={{ ...HEADER_BASE, background }}>
+    <div style={{
+      ...HEADER_BASE,
+      background,
+      paddingTop: safeTop,
+      height: `calc(56px + ${safeTop})`,
+    }}>
       <button onClick={onBack} style={BACK_BTN}>
         <ArrowLeft style={{ width: 20, height: 20 }} />
       </button>
