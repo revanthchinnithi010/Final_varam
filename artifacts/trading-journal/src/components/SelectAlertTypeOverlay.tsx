@@ -102,19 +102,6 @@ const PremiumSymbolCard = memo(function PremiumSymbolCard({ symbol }: { symbol: 
     }}>
       {/* LEFT */}
       <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-        {/* Coin circle */}
-        <div style={{
-          width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
-          background: "linear-gradient(145deg,rgba(183,255,90,.17) 0%,rgba(34,197,94,.09) 100%)",
-          border: "1.5px solid rgba(183,255,90,.26)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 0 14px rgba(183,255,90,.10)",
-        }}>
-          <span style={{ fontSize: 13, fontWeight: 900, color: "#B7FF5A", letterSpacing: "-.03em", fontFamily: "monospace" }}>
-            {coinInitials(symbol)}
-          </span>
-        </div>
-
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           {/* Symbol + type badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
