@@ -343,8 +343,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
 
         <div style={{
           flex: 1, overflowY: "auto",
-          WebkitOverflowScrolling: "touch",
-          overscrollBehavior: "contain",
+          overscrollBehavior: "none",
           padding: "20px 16px",
           paddingBottom: "calc(env(safe-area-inset-bottom) + 32px)",
         } as React.CSSProperties}>
