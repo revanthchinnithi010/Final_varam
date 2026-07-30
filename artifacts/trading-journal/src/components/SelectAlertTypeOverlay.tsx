@@ -38,12 +38,15 @@ import {
   tweenFast,
 } from "@/animations/motion";
 import { useChartStore } from "@/store/chartStore";
-import { SYMBOL_CATALOG } from "@/store/brokerWatchlistStore";
-import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { SYMBOL_CATALOG, deriveMeta } from "@/store/brokerWatchlistStore";
+import { TrendingUp, TrendingDown, AlertTriangle, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DUR_OPEN  = 320;
 const DUR_CLOSE = 240;
+
+// All timeframes shown in the horizontal pill strip (superset of TIMEFRAMES dropdown)
+const TF_PILLS = ["1M", "5M", "10M", "15M", "30M", "1H", "2H", "4H", "1D", "1W"] as const;
 
 // ── Keyframes (injected once) ────────────────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("__sat_kf__")) {
@@ -504,17 +507,98 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
         } as React.CSSProperties}>
           <div className="space-y-4">
 
-            {/* ── SYMBOL + TIMEFRAME (filter, at top) ── */}
-            <div className="grid grid-cols-2 gap-3">
-              <FieldRow label="Symbol">
-                <div className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white flex items-center">
-                  {form.symbol}
+            {/* ── SYMBOL CARD ── */}
+            {(() => {
+              const meta = deriveMeta(form.symbol);
+              return (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.09)",
+                }}>
+                  {/* Badge */}
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                    background: "rgba(255,255,255,0.07)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: "0.03em",
+                      color: "rgba(255,255,255,0.75)", lineHeight: 1,
+                    }}>
+                      {meta.badge.slice(0, 4)}
+                    </span>
+                  </div>
+
+                  {/* Symbol + description */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{
+                      fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.92)",
+                      letterSpacing: "0.01em", lineHeight: 1.2,
+                    }}>
+                      {form.symbol}
+                    </p>
+                    <p style={{
+                      fontSize: 11, color: "rgba(255,255,255,0.38)",
+                      marginTop: 2, letterSpacing: "0.01em",
+                    }}>
+                      {(SYMBOL_CATALOG[form.symbol]?.description) || meta.label}
+                    </p>
+                  </div>
+
+                  {/* Chevron — visual affordance (symbol locked to active chart) */}
+                  <ChevronDown
+                    style={{ width: 16, height: 16, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}
+                  />
                 </div>
-                <p className="text-[10px] mt-1" style={{ color: "#fb923c" }}>by default symbol selected</p>
-              </FieldRow>
-              <FieldRow label="Timeframe">
-                <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
-              </FieldRow>
+              );
+            })()}
+
+            {/* ── TIMEFRAME PILL STRIP ── */}
+            <div style={{
+              display: "flex", gap: 6,
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              paddingBottom: 2,         // room for focus ring
+              marginBottom: -2,
+            } as React.CSSProperties}>
+              {TF_PILLS.map(tf => {
+                const isActive = toCanonicalMinutes(form.timeframe) === toCanonicalMinutes(tf);
+                return (
+                  <button
+                    key={tf}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, timeframe: tf }))}
+                    style={{
+                      flexShrink: 0,
+                      height: 34,
+                      minWidth: 44,
+                      paddingLeft: 12,
+                      paddingRight: 12,
+                      borderRadius: 8,
+                      border: isActive
+                        ? "1.5px solid var(--primary, #b7ff5a)"
+                        : "1px solid rgba(255,255,255,0.10)",
+                      background: isActive
+                        ? "var(--primary, #b7ff5a)"
+                        : "rgba(255,255,255,0.03)",
+                      color: isActive ? "#000" : "rgba(255,255,255,0.45)",
+                      fontSize: 12,
+                      fontWeight: isActive ? 700 : 500,
+                      letterSpacing: "0.02em",
+                      cursor: "pointer",
+                      transition: "background 0.15s, border-color 0.15s, color 0.15s",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {tf}
+                  </button>
+                );
+              })}
             </div>
 
             {/* ── SELECT EXISTING DRAWING ── */}
