@@ -88,7 +88,7 @@ const PremiumSymbolCard = memo(function PremiumSymbolCard({ symbol }: { symbol: 
     <div style={{ margin: "16px 16px 0" }}>
       {/* Selected label — outside card */}
       <span style={{ display: "block", fontSize: 9.5, fontWeight: 700, color: "#fb923c", letterSpacing: ".09em", textTransform: "uppercase", lineHeight: 1, marginBottom: 8 }}>
-        Selected Symbol
+        ✅ Selected Symbol
       </span>
     <div style={{
       minHeight: 86,
