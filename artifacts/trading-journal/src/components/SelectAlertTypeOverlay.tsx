@@ -101,6 +101,24 @@ function formatPrice(p: number): string {
   return p.toFixed(8);
 }
 
+/**
+ * Format a drawing price with sane decimal precision based on magnitude.
+ * ≥ 1,000  → 2 dp with thousands separator (BTC, ETH, indices)
+ * ≥ 100    → 2 dp (gold, mid-cap)
+ * ≥ 10     → 3 dp
+ * ≥ 1      → 5 dp (forex pairs like EURUSD)
+ * < 1      → 6 dp (DOGE, PEPE, micro-alts)
+ */
+function fmtDrawingPrice(price: number): string {
+  if (!isFinite(price) || price <= 0) return "—";
+  if (price >= 1_000)  return price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (price >= 100)    return price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (price >= 10)     return price.toFixed(3);
+  if (price >= 1)      return price.toFixed(5);
+  if (price >= 0.001)  return price.toFixed(6);
+  return price.toFixed(8);
+}
+
 function instrType(sym: string) {
   const s = sym.toUpperCase();
   return s.includes("PERP") ? "PERP" : s.includes("SPOT") ? "SPOT" : "PERP";
@@ -509,53 +527,111 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                         type="button"
                         onClick={() => setSelectedDrawingId(isSelected ? null : d.id)}
                         className={cn(
-                          "w-full text-left rounded-xl border p-3 transition-colors",
+                          "w-full text-left rounded-xl border transition-colors",
                           isSelected
                             ? "border-primary/40 bg-primary/[0.04]"
                             : "border-white/[0.06] bg-white/[0.02]"
                         )}
+                        style={{ padding: "14px 14px" }}
                       >
-                        <div className="flex items-start gap-3">
-                          {/* Radio */}
-                          <div className={cn(
-                            "mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center",
-                            isSelected ? "border-primary" : "border-white/30"
-                          )}>
-                            {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+
+                          {/* ── Radio ── */}
+                          <div style={{
+                            marginTop: 2, width: 18, height: 18, borderRadius: "50%",
+                            border: `2px solid ${isSelected ? "var(--primary, #b7ff5a)" : "rgba(255,255,255,0.22)"}`,
+                            flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                            transition: "border-color 0.15s",
+                          }}>
+                            {isSelected && (
+                              <div style={{ width: 9, height: 9, borderRadius: "50%", background: "var(--primary, #b7ff5a)" }} />
+                            )}
                           </div>
-                          {/* Info */}
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className={cn(
-                                "text-[10px] font-bold uppercase tracking-wider",
-                                isSelected ? "text-primary" : "text-muted-foreground/70"
-                              )}>
-                                {d.toolType === "ray" ? "Ray" : "Trendline"}
-                              </span>
-                              <span className="text-[10px] font-mono text-muted-foreground/45">
-                                ID: {drawingDisplayId(d)}
-                              </span>
-                            </div>
-                            {p0 && (
-                              <div>
-                                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-wider mb-0.5">First Point</p>
-                                <p className="text-[11px] text-white">Price: {p0.price}</p>
-                                <p className="text-[10px] text-muted-foreground/55">Date: {fmtUtcDate(p0.time)}</p>
-                                <p className="text-[10px] text-muted-foreground/55">Time: {fmtUtcTime(p0.time)}</p>
+
+                          {/* ── Two-column body ── */}
+                          <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 8px" }}>
+
+                            {/* ── LEFT: Type · ID · First Point ── */}
+                            <div>
+                              {/* Type + ID */}
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginBottom: 10 }}>
+                                <span style={{
+                                  fontSize: 13, fontWeight: 700, letterSpacing: "0.05em",
+                                  textTransform: "uppercase",
+                                  color: isSelected ? "var(--primary, #b7ff5a)" : "rgba(255,255,255,0.85)",
+                                }}>
+                                  {d.toolType === "ray" ? "Ray" : "Trendline"}
+                                </span>
+                                <span style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(255,255,255,0.32)" }}>
+                                  {drawingDisplayId(d)}
+                                </span>
                               </div>
-                            )}
-                            {p1 && (
-                              <div>
-                                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-wider mb-0.5">Second Point</p>
-                                <p className="text-[11px] text-white">Price: {p1.price}</p>
-                                <p className="text-[10px] text-muted-foreground/55">Date: {fmtUtcDate(p1.time)}</p>
-                                <p className="text-[10px] text-muted-foreground/55">Time: {fmtUtcTime(p1.time)}</p>
-                              </div>
-                            )}
-                            <div className="flex gap-4 pt-0.5">
-                              <span className="text-[10px] text-muted-foreground/45">Symbol: {d.symbol}</span>
-                              <span className="text-[10px] text-muted-foreground/45">Timeframe: {d.timeframe}</span>
+
+                              {/* First Point */}
+                              <p style={{
+                                fontSize: 9, fontWeight: 600, letterSpacing: "0.1em",
+                                textTransform: "uppercase", color: "rgba(255,255,255,0.28)",
+                                marginBottom: 5,
+                              }}>
+                                First Point
+                              </p>
+                              <p style={{
+                                fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.92)",
+                                fontVariantNumeric: "tabular-nums", lineHeight: 1.15,
+                                letterSpacing: "-0.01em",
+                              }}>
+                                {p0 ? fmtDrawingPrice(p0.price) : "—"}
+                              </p>
+                              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+                                {p0 ? fmtUtcDate(p0.time) : "—"}
+                              </p>
+                              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.32)" }}>
+                                {p0 ? fmtUtcTime(p0.time) : "—"}
+                              </p>
                             </div>
+
+                            {/* ── RIGHT: Second Point · Symbol · Timeframe ── */}
+                            <div>
+                              {/* Spacer to align "Second Point" with "First Point" */}
+                              <div style={{ height: 33 }} />
+
+                              {/* Second Point */}
+                              <p style={{
+                                fontSize: 9, fontWeight: 600, letterSpacing: "0.1em",
+                                textTransform: "uppercase", color: "rgba(255,255,255,0.28)",
+                                marginBottom: 5,
+                              }}>
+                                Second Point
+                              </p>
+                              <p style={{
+                                fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.92)",
+                                fontVariantNumeric: "tabular-nums", lineHeight: 1.15,
+                                letterSpacing: "-0.01em",
+                              }}>
+                                {p1 ? fmtDrawingPrice(p1.price) : "—"}
+                              </p>
+                              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+                                {p1 ? fmtUtcDate(p1.time) : "—"}
+                              </p>
+                              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.32)" }}>
+                                {p1 ? fmtUtcTime(p1.time) : "—"}
+                              </p>
+
+                              {/* Symbol · Timeframe */}
+                              <div style={{
+                                marginTop: 12,
+                                paddingTop: 10,
+                                borderTop: "1px solid rgba(255,255,255,0.05)",
+                              }}>
+                                <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>
+                                  {d.symbol}
+                                </p>
+                                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                                  {intervalToHumanTf(d.timeframe)}
+                                </p>
+                              </div>
+                            </div>
+
                           </div>
                         </div>
                       </button>
