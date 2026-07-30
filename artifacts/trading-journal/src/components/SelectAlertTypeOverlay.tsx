@@ -37,6 +37,7 @@ import {
   DUR_STANDARD,
   tweenFast,
 } from "@/animations/motion";
+import { useChartStore } from "@/store/chartStore";
 import { SYMBOL_CATALOG } from "@/store/brokerWatchlistStore";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,40 @@ if (typeof document !== "undefined" && !document.getElementById("__sat_kf__")) {
     @keyframes sat-flash  { 0%{opacity:1} 25%{opacity:.5} 100%{opacity:1} }
   `;
   document.head.appendChild(s);
+}
+
+// ── Timeframe normalisation ───────────────────────────────────────────────────
+// Chart stores interval as numeric minutes ("60", "15", "240" …).
+// The alert dropdown uses human labels ("1H", "15M", "4H" …).
+// Drawings are saved with whatever format the chart had at draw-time, so we
+// must normalise both sides to a canonical numeric-minutes string before comparing.
+
+const TF_TO_MINUTES: Record<string, string> = {
+  // numeric → canonical
+  "1": "1", "3": "3", "5": "5", "10": "10", "15": "15", "30": "30",
+  "45": "45", "60": "60", "120": "120", "240": "240",
+  "480": "480", "720": "720", "1440": "1440", "10080": "10080",
+  // human labels → canonical
+  "1M": "1", "3M": "3", "5M": "5", "10M": "10", "15M": "15", "30M": "30",
+  "45M": "45", "1H": "60", "2H": "120", "4H": "240",
+  "6H": "360", "8H": "480", "12H": "720", "1D": "1440", "D": "1440",
+  "1W": "10080", "W": "10080",
+};
+
+/** Convert any interval/timeframe string to canonical numeric-minutes string. */
+function toCanonicalMinutes(tf: string): string {
+  return TF_TO_MINUTES[tf] ?? TF_TO_MINUTES[tf.toUpperCase()] ?? tf;
+}
+
+/** Convert a numeric-minutes interval to the human label used in the dropdown. */
+function intervalToHumanTf(interval: string): string {
+  const minutesToLabel: Record<string, string> = {
+    "1": "1M", "3": "3M", "5": "5M", "10": "10M", "15": "15M", "30": "30M",
+    "45": "45M", "60": "1H", "120": "2H", "240": "4H",
+    "480": "8H", "720": "12H", "1440": "1D", "10080": "1W",
+  };
+  const canon = toCanonicalMinutes(interval);
+  return minutesToLabel[canon] ?? interval.toUpperCase();
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -306,27 +341,77 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
     return undefined;
   }, [open]);
 
+  // Read the live chart interval so we can initialise the form timeframe correctly.
+  // chartStore stores interval as numeric minutes ("60", "15" …); convert to the
+  // human label that matches the TIMEFRAMES dropdown ("1H", "15M" …).
+  const chartInterval = useChartStore(s => s.interval);
+  const chartHumanTf  = intervalToHumanTf(chartInterval);
+
   const [form, setForm] = useState({
-    symbol: symbol ?? "",
-    timeframe: "1H",
+    symbol:    symbol ?? "",
+    timeframe: chartHumanTf,
     p1Price: "", p1Time: "",
     p2Price: "", p2Time: "",
     condition: "touch" as TrendlineAlert["condition"],
     notes: "",
   });
 
-  // Reset form + symbol when screen opens fresh
+  // Sync symbol AND timeframe every time the screen opens so it always reflects
+  // the chart that is currently visible — not whatever it was the last time.
   useEffect(() => {
-    if (open) setForm(f => ({ ...f, symbol: symbol ?? "" }));
+    if (open) {
+      setForm(f => ({
+        ...f,
+        symbol:    symbol ?? "",
+        timeframe: intervalToHumanTf(useChartStore.getState().interval),
+      }));
+    }
   }, [open, symbol]);
+
+  // Keep timeframe in sync if the user changes chart interval while the screen
+  // is already mounted (e.g. via the chart control bar behind the overlay).
+  useEffect(() => {
+    if (open) setForm(f => ({ ...f, timeframe: chartHumanTf }));
+  }, [chartHumanTf, open]);
 
   // ── Drawing selection ───────────────────────────────────────────────────────
   const allDrawings = useDrawingStore(s => s.drawings);
+
+  // Normalize both sides so "60" === "1H", "15" === "15M" etc. all match.
+  const normalSymbol   = (form.symbol ?? "").trim().toUpperCase();
+  const normalTf       = toCanonicalMinutes(form.timeframe);
+
   const relevantDrawings = allDrawings.filter(d =>
     (d.toolType === "trendline" || d.toolType === "extended" || d.toolType === "ray") &&
-    d.symbol === form.symbol &&
-    d.timeframe === form.timeframe
+    (d.symbol ?? "").trim().toUpperCase() === normalSymbol &&
+    toCanonicalMinutes(d.timeframe) === normalTf
   );
+
+  // ── Debug logging (temporary, per requirements) ─────────────────────────────
+  useEffect(() => {
+    if (!open) return;
+    console.group("[TrendlineAlert] Drawing filter diagnostics");
+    console.log("Total drawings in store  :", allDrawings.length);
+    console.log("Selected symbol (raw)    :", form.symbol);
+    console.log("Selected timeframe (raw) :", form.timeframe);
+    console.log("Symbol after normalise   :", normalSymbol);
+    console.log("Timeframe after normalise:", normalTf);
+    console.log("chartStore.interval      :", chartInterval);
+    console.log("Filtered drawings count  :", relevantDrawings.length);
+    console.log("Matched drawing IDs      :", relevantDrawings.map(d => d.id));
+    if (allDrawings.length > 0) {
+      console.log("All drawings (symbol/tf) :", allDrawings.map(d => ({
+        id: d.id,
+        toolType: d.toolType,
+        symbol: d.symbol,
+        timeframe: d.timeframe,
+        symbolNorm: (d.symbol ?? "").trim().toUpperCase(),
+        tfNorm: toCanonicalMinutes(d.timeframe),
+      })));
+    }
+    console.groupEnd();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, allDrawings.length, normalSymbol, normalTf]);
 
   const [selectedDrawingId, setSelectedDrawingId] = useState<number | null>(null);
 
