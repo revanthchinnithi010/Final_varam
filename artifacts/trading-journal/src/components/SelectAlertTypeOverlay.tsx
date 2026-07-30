@@ -354,7 +354,7 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
           <div style={{
             padding: "24px 16px 14px",
             fontSize: 11, fontWeight: 700,
-            color: "#fff",
+            color: "rgba(255,255,255,.45)",
             letterSpacing: ".09em",
             textTransform: "uppercase",
           }}>
