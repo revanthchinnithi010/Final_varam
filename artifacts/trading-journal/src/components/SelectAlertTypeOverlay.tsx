@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { AppHeader } from "@/components/AppHeader";
 import { useSymbolTick } from "@/store/tickStore";
 import { useAlertStore } from "@/store/alertStore";
+import { useDrawingStore } from "@/store/drawingStore";
+import type { Drawing } from "@/types/drawing";
 import {
   CreatePriceAlertModal,
   CreateZoneAlertModal,
@@ -264,6 +266,23 @@ function AlertTypeCard({ accentColor, title, description, index, onPress }: Card
   );
 }
 
+// ── Drawing selection helpers ─────────────────────────────────────────────────
+
+function drawingDisplayId(d: Drawing): string {
+  const pad = String(d.id).padStart(4, "0");
+  return d.toolType === "ray" ? `RAY-${pad}` : `TL-${pad}`;
+}
+function fmtUtcDate(sec: number): string {
+  return new Date(sec * 1000).toLocaleDateString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric", timeZone: "UTC",
+  });
+}
+function fmtUtcTime(sec: number): string {
+  return new Date(sec * 1000).toLocaleTimeString("en-GB", {
+    hour: "2-digit", minute: "2-digit", timeZone: "UTC",
+  }) + " UTC";
+}
+
 // ── Trendline Alert full-screen screen ───────────────────────────────────────
 const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
   open, symbol, onClose, onSave,
@@ -300,6 +319,39 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
   useEffect(() => {
     if (open) setForm(f => ({ ...f, symbol: symbol ?? "" }));
   }, [open, symbol]);
+
+  // ── Drawing selection ───────────────────────────────────────────────────────
+  const allDrawings = useDrawingStore(s => s.drawings);
+  const relevantDrawings = allDrawings.filter(d =>
+    (d.toolType === "trendline" || d.toolType === "extended" || d.toolType === "ray") &&
+    d.symbol === form.symbol &&
+    d.timeframe === form.timeframe
+  );
+
+  const [selectedDrawingId, setSelectedDrawingId] = useState<number | null>(null);
+
+  // Clear selection each time the screen opens
+  useEffect(() => {
+    if (open) setSelectedDrawingId(null);
+  }, [open]);
+
+  // Auto-populate form whenever the selected drawing (or its coords) changes
+  useEffect(() => {
+    if (selectedDrawingId === null) return;
+    const d = allDrawings.find(dr => dr.id === selectedDrawingId);
+    if (!d) { setSelectedDrawingId(null); return; }   // drawing deleted
+    const p0 = d.points[0], p1 = d.points[1];
+    if (!p0 || !p1) return;
+    setForm(f => ({
+      ...f,
+      symbol: d.symbol,
+      timeframe: d.timeframe,
+      p1Price: String(p0.price),
+      p1Time:  new Date(p0.time * 1000).toISOString(),
+      p2Price: String(p1.price),
+      p2Time:  new Date(p1.time * 1000).toISOString(),
+    }));
+  }, [selectedDrawingId, allDrawings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const timeInvalid = !!(form.p1Time && form.p2Time && new Date(form.p2Time) <= new Date(form.p1Time));
   const canSave = !!(form.p1Price && form.p2Price && form.p1Time && form.p2Time && !timeInvalid);
@@ -348,6 +400,92 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
           paddingBottom: "calc(env(safe-area-inset-bottom) + 32px)",
         } as React.CSSProperties}>
           <div className="space-y-4">
+
+            {/* ── SELECT EXISTING DRAWING ── */}
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
+                Select Existing Drawing
+              </p>
+              {relevantDrawings.length === 0 ? (
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-5 text-center">
+                  <p className="text-xs text-muted-foreground/40">
+                    No trendlines or rays for {form.symbol || "—"} · {form.timeframe}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {relevantDrawings.map(d => {
+                    const p0 = d.points[0];
+                    const p1 = d.points[1];
+                    const isSelected = selectedDrawingId === d.id;
+                    return (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => setSelectedDrawingId(isSelected ? null : d.id)}
+                        className={cn(
+                          "w-full text-left rounded-xl border p-3 transition-colors",
+                          isSelected
+                            ? "border-primary/40 bg-primary/[0.04]"
+                            : "border-white/[0.06] bg-white/[0.02]"
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          {/* Radio */}
+                          <div className={cn(
+                            "mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center",
+                            isSelected ? "border-primary" : "border-white/30"
+                          )}>
+                            {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                          {/* Info */}
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className={cn(
+                                "text-[10px] font-bold uppercase tracking-wider",
+                                isSelected ? "text-primary" : "text-muted-foreground/70"
+                              )}>
+                                {d.toolType === "ray" ? "Ray" : "Trendline"}
+                              </span>
+                              <span className="text-[10px] font-mono text-muted-foreground/45">
+                                ID: {drawingDisplayId(d)}
+                              </span>
+                            </div>
+                            {p0 && (
+                              <div>
+                                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-wider mb-0.5">First Point</p>
+                                <p className="text-[11px] text-white">Price: {p0.price}</p>
+                                <p className="text-[10px] text-muted-foreground/55">Date: {fmtUtcDate(p0.time)}</p>
+                                <p className="text-[10px] text-muted-foreground/55">Time: {fmtUtcTime(p0.time)}</p>
+                              </div>
+                            )}
+                            {p1 && (
+                              <div>
+                                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-wider mb-0.5">Second Point</p>
+                                <p className="text-[11px] text-white">Price: {p1.price}</p>
+                                <p className="text-[10px] text-muted-foreground/55">Date: {fmtUtcDate(p1.time)}</p>
+                                <p className="text-[10px] text-muted-foreground/55">Time: {fmtUtcTime(p1.time)}</p>
+                              </div>
+                            )}
+                            <div className="flex gap-4 pt-0.5">
+                              <span className="text-[10px] text-muted-foreground/45">Symbol: {d.symbol}</span>
+                              <span className="text-[10px] text-muted-foreground/45">Timeframe: {d.timeframe}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ── OR ENTER MANUALLY divider ── */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-white/[0.06]" />
+              <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">or enter manually</span>
+              <div className="flex-1 h-px bg-white/[0.06]" />
+            </div>
 
             {/* Symbol + Timeframe */}
             <div className="grid grid-cols-2 gap-3">
