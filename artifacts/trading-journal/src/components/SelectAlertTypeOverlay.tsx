@@ -504,6 +504,19 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
         } as React.CSSProperties}>
           <div className="space-y-4">
 
+            {/* ── SYMBOL + TIMEFRAME (filter, at top) ── */}
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Symbol">
+                <div className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white flex items-center">
+                  {form.symbol}
+                </div>
+                <p className="text-[10px] mt-1" style={{ color: "#fb923c" }}>by default symbol selected</p>
+              </FieldRow>
+              <FieldRow label="Timeframe">
+                <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
+              </FieldRow>
+            </div>
+
             {/* ── SELECT EXISTING DRAWING ── */}
             <div>
               <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
@@ -512,7 +525,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
               {relevantDrawings.length === 0 ? (
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-5 text-center">
                   <p className="text-xs text-muted-foreground/40">
-                    No trendlines or rays for {form.symbol || "—"} · {form.timeframe}
+                    No Trendlines or Rays found for the selected Symbol and Timeframe.
                   </p>
                 </div>
               ) : (
@@ -617,19 +630,6 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                                 {p1 ? fmtUtcTime(p1.time) : "—"}
                               </p>
 
-                              {/* Symbol · Timeframe */}
-                              <div style={{
-                                marginTop: 12,
-                                paddingTop: 10,
-                                borderTop: "1px solid rgba(255,255,255,0.05)",
-                              }}>
-                                <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.7)", lineHeight: 1.3 }}>
-                                  {d.symbol}
-                                </p>
-                                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
-                                  {intervalToHumanTf(d.timeframe)}
-                                </p>
-                              </div>
                             </div>
 
                           </div>
@@ -646,19 +646,6 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
               <div className="flex-1 h-px bg-white/[0.06]" />
               <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">or enter manually</span>
               <div className="flex-1 h-px bg-white/[0.06]" />
-            </div>
-
-            {/* Symbol + Timeframe */}
-            <div className="grid grid-cols-2 gap-3">
-              <FieldRow label="Symbol">
-                <div className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white flex items-center">
-                  {form.symbol}
-                </div>
-                <p className="text-[10px] mt-1" style={{ color: "#fb923c" }}>by default symbol selected</p>
-              </FieldRow>
-              <FieldRow label="Timeframe">
-                <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
-              </FieldRow>
             </div>
 
             {/* Slope indicator */}
