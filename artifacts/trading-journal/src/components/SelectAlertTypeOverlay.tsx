@@ -106,21 +106,15 @@ const PremiumSymbolCard = memo(function PremiumSymbolCard({ symbol }: { symbol: 
       flexShrink: 0,
     }}>
       {/* LEFT */}
-      <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {/* Symbol + type badge */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: ".01em", lineHeight: 1 }}>
-              {symbol}
-            </span>
-          </div>
-          {/* Full name */}
-          {SYMBOL_CATALOG[symbol]?.description && (
-            <span style={{ fontSize: 10.5, fontWeight: 500, color: "rgba(148,163,184,.5)", lineHeight: 1, marginTop: 1 }}>
-              {SYMBOL_CATALOG[symbol].description}
-            </span>
-          )}
-        </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: ".01em", lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {symbol}
+        </span>
+        {SYMBOL_CATALOG[symbol]?.description && (
+          <span style={{ fontSize: 11.5, fontWeight: 400, color: "rgba(148,163,184,.6)", lineHeight: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {SYMBOL_CATALOG[symbol].description}
+          </span>
+        )}
       </div>
 
       {/* RIGHT */}
