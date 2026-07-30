@@ -288,7 +288,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
   }, [open]);
 
   const [form, setForm] = useState({
-    symbol: symbol ?? "NAS100",
+    symbol: symbol ?? "",
     timeframe: "1H",
     p1Price: "", p1Time: "",
     p2Price: "", p2Time: "",
@@ -298,7 +298,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
 
   // Reset form + symbol when screen opens fresh
   useEffect(() => {
-    if (open) setForm(f => ({ ...f, symbol: symbol ?? "NAS100" }));
+    if (open) setForm(f => ({ ...f, symbol: symbol ?? "" }));
   }, [open, symbol]);
 
   const timeInvalid = !!(form.p1Time && form.p2Time && new Date(form.p2Time) <= new Date(form.p1Time));
@@ -353,7 +353,9 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
             {/* Symbol + Timeframe */}
             <div className="grid grid-cols-2 gap-3">
               <FieldRow label="Symbol">
-                <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
+                <div className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white flex items-center">
+                  {form.symbol}
+                </div>
               </FieldRow>
               <FieldRow label="Timeframe">
                 <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
