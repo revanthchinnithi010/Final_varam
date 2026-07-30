@@ -29,6 +29,7 @@ import {
   EASE,
   DUR_STANDARD,
 } from "@/animations/motion";
+import { SYMBOL_CATALOG } from "@/store/brokerWatchlistStore";
 
 const DUR_OPEN  = 320;
 const DUR_CLOSE = 240;
@@ -120,6 +121,12 @@ const PremiumSymbolCard = memo(function PremiumSymbolCard({ symbol }: { symbol: 
               {instrType(symbol)}
             </div>
           </div>
+          {/* Full name */}
+          {SYMBOL_CATALOG[symbol]?.description && (
+            <span style={{ fontSize: 10.5, fontWeight: 500, color: "rgba(148,163,184,.5)", lineHeight: 1, marginTop: 1 }}>
+              {SYMBOL_CATALOG[symbol].description}
+            </span>
+          )}
         </div>
       </div>
 
