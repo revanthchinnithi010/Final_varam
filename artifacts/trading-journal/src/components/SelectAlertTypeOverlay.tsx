@@ -353,7 +353,12 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
             {/* Symbol + Timeframe */}
             <div className="grid grid-cols-2 gap-3">
               <FieldRow label="Symbol">
-                <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
+                <div className="flex items-center gap-2 h-9 px-3 rounded-lg border border-white/[0.08] bg-white/[0.04]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" style={{ boxShadow: "0 0 5px hsl(var(--primary))" }} />
+                  <span className="text-[13px] font-bold font-mono text-primary tracking-wide truncate">
+                    {form.symbol || symbol}
+                  </span>
+                </div>
               </FieldRow>
               <FieldRow label="Timeframe">
                 <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />

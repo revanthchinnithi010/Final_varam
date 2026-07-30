@@ -1150,7 +1150,7 @@ const AlertModalController = forwardRef<AlertModalControllerHandle, {
         <CreateZoneAlertModal onClose={handleClose} onSave={handleSaveZone} />
       )}
       {createModal === "trendline" && (
-        <CreateTrendlineAlertModal onClose={handleClose} onSave={handleSaveTrendline} initialSymbol={activeSymbol} />
+        <CreateTrendlineAlertModal onClose={handleClose} onSave={handleSaveTrendline} />
       )}
     </>
   );
