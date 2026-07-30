@@ -664,24 +664,6 @@ export function DrawingAlertModal({
           <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5"
             style={{ scrollbarWidth: "none" }}>
 
-            {/* Symbol */}
-            <div className="flex flex-col gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-widest"
-                style={{ color: "rgba(167,184,169,0.5)" }}>Symbol</span>
-              <div className="flex items-center gap-2.5 h-10 px-3 rounded-xl"
-                style={{
-                  background: "rgba(13,28,22,0.9)",
-                  border: "1px solid rgba(183,255,90,0.2)",
-                }}>
-                <div className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ background: "#B7FF5A", boxShadow: "0 0 6px rgba(183,255,90,0.6)" }} />
-                <span className="text-[13px] font-bold font-mono tracking-wide"
-                  style={{ color: "#B7FF5A" }}>
-                  {symbol}
-                </span>
-              </div>
-            </div>
-
             {/* Chart UTC notice */}
             <p className="text-[9.5px] text-center py-1.5 rounded-lg"
               style={{

@@ -20,7 +20,6 @@ import {
   type AnyAlert, type AlertStatus, type AlertType,
 } from "@/data/alertsData";
 import { useAlertStore } from "@/store/alertStore";
-import { useChartStore } from "@/store/chartStore";
 import { useLiveMarketContext } from "@/contexts/LiveMarketContext";
 import { useLocation } from "wouter";
 import {
@@ -1109,7 +1108,6 @@ const AlertModalController = forwardRef<AlertModalControllerHandle, {
   onSaveTrendlineAlert: (a: TrendlineAlert) => void;
 }>(function AlertModalController({ onSavePriceAlert, onSaveZoneAlert, onSaveTrendlineAlert }, ref) {
   const [createModal, setCreateModal] = useState<CreateModal | null>(null);
-  const activeSymbol = useChartStore(s => s.symbol);
 
   useImperativeHandle(ref, () => ({
     open: (type) => {
