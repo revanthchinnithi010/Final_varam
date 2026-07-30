@@ -85,8 +85,12 @@ const PremiumSymbolCard = memo(function PremiumSymbolCard({ symbol }: { symbol: 
   }, [price]);
 
   return (
+    <div style={{ margin: "16px 16px 0" }}>
+      {/* Selected label — outside card */}
+      <span style={{ display: "block", fontSize: 9.5, fontWeight: 700, color: "#fb923c", letterSpacing: ".09em", textTransform: "uppercase", lineHeight: 1, marginBottom: 8 }}>
+        Selected Symbol
+      </span>
     <div style={{
-      margin: "16px 16px 0",
       minHeight: 86,
       padding: "14px 16px",
       borderRadius: 18,
@@ -104,10 +108,6 @@ const PremiumSymbolCard = memo(function PremiumSymbolCard({ symbol }: { symbol: 
       {/* LEFT */}
       <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {/* Selected label */}
-          <span style={{ fontSize: 9.5, fontWeight: 600, color: "rgba(148,163,184,.45)", letterSpacing: ".09em", textTransform: "uppercase", lineHeight: 1 }}>
-            Selected Symbol
-          </span>
           {/* Symbol + type badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: ".01em", lineHeight: 1 }}>
@@ -152,6 +152,7 @@ const PremiumSymbolCard = memo(function PremiumSymbolCard({ symbol }: { symbol: 
           }}>LIVE</div>
         </div>
       </div>
+    </div>
     </div>
   );
 });
