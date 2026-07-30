@@ -13,7 +13,6 @@
 import { memo, useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { GitBranch, Layers, Target } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useSymbolTick } from "@/store/tickStore";
 import { useAlertStore } from "@/store/alertStore";
@@ -194,15 +193,13 @@ function useRipple() {
 
 // ── Alert type card ──────────────────────────────────────────────────────────
 interface CardProps {
-  icon: React.ReactNode;
-  iconBg: string; iconBorder: string; iconGlow: string;
   accentColor: string;
   title: string; description: string;
   index: number;
   onPress: () => void;
 }
 
-function AlertTypeCard({ icon, iconBg, iconBorder, iconGlow, accentColor, title, description, index, onPress }: CardProps) {
+function AlertTypeCard({ accentColor, title, description, index, onPress }: CardProps) {
   const [pressed, setPressed] = useState(false);
   const { ripples, trigger }  = useRipple();
 
@@ -251,16 +248,6 @@ function AlertTypeCard({ icon, iconBg, iconBorder, iconGlow, accentColor, title,
             pointerEvents: "none",
           }}/>
         ))}
-
-        {/* 52×52 icon */}
-        <div style={{
-          width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-          background: iconBg, border: `1px solid ${iconBorder}`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: `0 0 16px ${iconGlow},0 3px 12px rgba(0,0,0,.22)`,
-        }}>
-          {icon}
-        </div>
 
         {/* Text */}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -402,10 +389,6 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
           <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "0 16px" }}>
             <AlertTypeCard
               index={0}
-              icon={<GitBranch style={{ width: 24, height: 24, color: "#B7FF5A" }} />}
-              iconBg="linear-gradient(145deg,rgba(183,255,90,.15) 0%,rgba(183,255,90,.07) 100%)"
-              iconBorder="rgba(183,255,90,.20)"
-              iconGlow="rgba(183,255,90,.15)"
               accentColor="#B7FF5A"
               title="Trendline Alerts"
               description="Trigger when price touches or crosses a trendline."
@@ -413,10 +396,6 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
             />
             <AlertTypeCard
               index={1}
-              icon={<Layers style={{ width: 24, height: 24, color: "#fb923c" }} />}
-              iconBg="linear-gradient(145deg,rgba(251,146,60,.15) 0%,rgba(251,146,60,.07) 100%)"
-              iconBorder="rgba(251,146,60,.20)"
-              iconGlow="rgba(251,146,60,.15)"
               accentColor="#fb923c"
               title="Zone Alerts"
               description="Trigger when price enters or exits a defined zone."
@@ -424,10 +403,6 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
             />
             <AlertTypeCard
               index={2}
-              icon={<Target style={{ width: 24, height: 24, color: "#60a5fa" }} />}
-              iconBg="linear-gradient(145deg,rgba(96,165,250,.15) 0%,rgba(96,165,250,.07) 100%)"
-              iconBorder="rgba(96,165,250,.20)"
-              iconGlow="rgba(96,165,250,.15)"
               accentColor="#60a5fa"
               title="Price Alerts"
               description="Trigger when price reaches a specific price level."
