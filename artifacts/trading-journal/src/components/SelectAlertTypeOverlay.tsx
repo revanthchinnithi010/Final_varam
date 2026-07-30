@@ -359,9 +359,10 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
           {/* Section label */}
           <div style={{
             padding: "24px 16px 14px",
-            fontSize: 10.5, fontWeight: 700,
-            color: "rgba(148,163,184,.38)",
-            textTransform: "uppercase", letterSpacing: ".11em",
+            fontSize: 11, fontWeight: 700,
+            color: "#fff",
+            letterSpacing: ".09em",
+            textTransform: "uppercase",
           }}>
             Choose alert type
           </div>
