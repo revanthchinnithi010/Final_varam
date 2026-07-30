@@ -12,24 +12,32 @@
 
 import { memo, useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { AppHeader } from "@/components/AppHeader";
 import { useSymbolTick } from "@/store/tickStore";
 import { useAlertStore } from "@/store/alertStore";
 import {
   CreatePriceAlertModal,
   CreateZoneAlertModal,
-  CreateTrendlineAlertModal,
+  FieldRow,
+  AlertSelect,
+  UTCDateTimePicker,
 } from "@/pages/alerts";
+import { Input } from "@/components/ui/input";
+import { AnimatedButton } from "@/components/animations";
 import type { PriceAlert, ZoneAlert, TrendlineAlert } from "@/data/alertsData";
+import { TIMEFRAMES, SYMBOLS } from "@/data/alertsData";
 import {
   COMPOSITOR_EASE,
   COMPOSITOR_EASE_CLOSE,
   TAP_TRANSITION,
   EASE,
   DUR_STANDARD,
+  tweenFast,
 } from "@/animations/motion";
 import { SYMBOL_CATALOG } from "@/store/brokerWatchlistStore";
+import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const DUR_OPEN  = 320;
 const DUR_CLOSE = 240;
@@ -256,6 +264,202 @@ function AlertTypeCard({ accentColor, title, description, index, onPress }: Card
   );
 }
 
+// ── Trendline Alert full-screen screen ───────────────────────────────────────
+const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
+  open, symbol, onClose, onSave,
+}: {
+  open: boolean;
+  symbol: string;
+  onClose: () => void;
+  onSave: (a: TrendlineAlert) => void;
+}) {
+  const [visible, setVisible] = useState(false);
+  const hasOpenedRef = useRef(false);
+  if (open) hasOpenedRef.current = true;
+
+  useEffect(() => {
+    if (open) {
+      let raf: number;
+      const t = setTimeout(() => { raf = requestAnimationFrame(() => setVisible(true)); }, 0);
+      return () => { clearTimeout(t); cancelAnimationFrame(raf); };
+    }
+    setVisible(false);
+    return undefined;
+  }, [open]);
+
+  const [form, setForm] = useState({
+    symbol: symbol ?? "NAS100",
+    timeframe: "1H",
+    p1Price: "", p1Time: "",
+    p2Price: "", p2Time: "",
+    condition: "touch" as TrendlineAlert["condition"],
+    notes: "",
+  });
+
+  // Reset form + symbol when screen opens fresh
+  useEffect(() => {
+    if (open) setForm(f => ({ ...f, symbol: symbol ?? "NAS100" }));
+  }, [open, symbol]);
+
+  const timeInvalid = !!(form.p1Time && form.p2Time && new Date(form.p2Time) <= new Date(form.p1Time));
+  const canSave = !!(form.p1Price && form.p2Price && form.p1Time && form.p2Time && !timeInvalid);
+
+  const handleSave = () => {
+    if (!canSave) return;
+    onSave({
+      id: `ta${Date.now()}`, type: "trendline",
+      symbol: form.symbol, timeframe: form.timeframe,
+      point1Price: parseFloat(form.p1Price), point1Time: form.p1Time,
+      point2Price: parseFloat(form.p2Price), point2Time: form.p2Time,
+      condition: form.condition, notes: form.notes,
+      status: "active", createdAt: new Date().toISOString(), triggeredAt: null,
+    });
+    onClose();
+  };
+
+  const slope = form.p1Price && form.p2Price
+    ? parseFloat(form.p2Price) > parseFloat(form.p1Price) ? "ascending" : "descending"
+    : null;
+
+  if (!hasOpenedRef.current) return null;
+
+  return createPortal(
+    <div
+      aria-hidden={!open}
+      style={{ position: "fixed", inset: 0, zIndex: 96, pointerEvents: open ? "auto" : "none" }}
+    >
+      <div
+        style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column",
+          background: "#000000",
+          transform: visible ? "translateX(0)" : "translateX(100%)",
+          transition: `transform ${visible ? DUR_OPEN : DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
+          willChange: "transform",
+          overflow: "hidden",
+        }}
+      >
+        <AppHeader title="Create Trendline Alert" onBack={onClose} />
+
+        <div style={{
+          flex: 1, overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+          overscrollBehavior: "contain",
+          padding: "20px 16px",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 32px)",
+        } as React.CSSProperties}>
+          <div className="space-y-4">
+
+            {/* Symbol + Timeframe */}
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Symbol">
+                <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
+              </FieldRow>
+              <FieldRow label="Timeframe">
+                <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
+              </FieldRow>
+            </div>
+
+            {/* Slope indicator */}
+            {slope && (
+              <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={tweenFast}
+                className="p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3">
+                {slope === "ascending"
+                  ? <TrendingUp className="w-5 h-5 text-primary flex-shrink-0" />
+                  : <TrendingDown className="w-5 h-5 text-primary flex-shrink-0" />}
+                <div>
+                  <p className="text-xs font-semibold text-primary capitalize">{slope} Trendline</p>
+                  <p className="text-[10px] text-primary/60">
+                    Slope: {(parseFloat(form.p2Price) - parseFloat(form.p1Price)).toFixed(2)} pts
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Point 1 */}
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 space-y-3">
+              <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Point 1 — Anchor</p>
+              <FieldRow label="Price">
+                <Input type="number" placeholder="e.g. 18500" value={form.p1Price}
+                  onChange={e => setForm(f => ({ ...f, p1Price: e.target.value }))}
+                  className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
+              </FieldRow>
+              <UTCDateTimePicker label="Time (UTC)" value={form.p1Time}
+                onChange={iso => setForm(f => ({ ...f, p1Time: iso }))} />
+            </div>
+
+            {/* Point 2 */}
+            <div className={cn(
+              "rounded-xl border p-3 space-y-3 transition-colors",
+              timeInvalid ? "border-amber-500/30 bg-amber-500/[0.04]" : "border-white/[0.06] bg-white/[0.02]"
+            )}>
+              <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Point 2 — Direction</p>
+              <FieldRow label="Price">
+                <Input type="number" placeholder="e.g. 18750" value={form.p2Price}
+                  onChange={e => setForm(f => ({ ...f, p2Price: e.target.value }))}
+                  className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
+              </FieldRow>
+              <UTCDateTimePicker label="Time (UTC)" value={form.p2Time}
+                onChange={iso => setForm(f => ({ ...f, p2Time: iso }))} />
+            </div>
+
+            {/* Time validation warning */}
+            <AnimatePresence>
+              {timeInvalid && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={tweenFast}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/25">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <p className="text-[11px] text-amber-400">Point 2 time must be after Point 1</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Condition */}
+            <FieldRow label="Alert Condition">
+              <div className="flex gap-2">
+                {(["touch", "break", "retest"] as const).map(c => (
+                  <AnimatedButton key={c} onClick={() => setForm(f => ({ ...f, condition: c }))}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",
+                      form.condition === c
+                        ? "bg-primary/20 border-primary/40 text-primary"
+                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                    )}>
+                    {c}
+                  </AnimatedButton>
+                ))}
+              </div>
+            </FieldRow>
+
+            {/* Notes */}
+            <FieldRow label="Notes">
+              <textarea rows={2} placeholder="Trendline notes..." value={form.notes}
+                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50" />
+            </FieldRow>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <AnimatedButton variant="ghost" className="flex-1 h-9 text-muted-foreground hover:text-white" onClick={onClose}>
+                Cancel
+              </AnimatedButton>
+              <AnimatedButton
+                disabled={!canSave}
+                className="flex-1 h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={handleSave}>
+                Create Trendline
+              </AnimatedButton>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+});
+
 // ── Main overlay ─────────────────────────────────────────────────────────────
 export interface SelectAlertTypeOverlayProps {
   open: boolean;
@@ -389,14 +593,13 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         </div> {/* inner panel */}
       </div> {/* outer shell */}
 
-      {/* Creation modals */}
-      {activeModal === "trendline" && (
-        <CreateTrendlineAlertModal
-          initialSymbol={symbol}
-          onClose={() => setActiveModal(null)}
-          onSave={handleTrendlineAlertSave}
-        />
-      )}
+      {/* Trendline — full-screen slide-in screen */}
+      <TrendlineAlertScreen
+        open={activeModal === "trendline"}
+        symbol={symbol}
+        onClose={() => setActiveModal(null)}
+        onSave={handleTrendlineAlertSave}
+      />
       {activeModal === "zone" && (
         <CreateZoneAlertModal
           initialSymbol={symbol}

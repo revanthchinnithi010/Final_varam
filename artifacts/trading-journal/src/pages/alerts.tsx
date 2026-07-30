@@ -161,7 +161,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
 }
 
 // ─── UTC 24-h Date/Time Picker (no AM/PM) ──────────────────────────────────────
-function UTCDateTimePicker({
+export function UTCDateTimePicker({
   label, value, onChange, optional = false,
 }: {
   label: string; value: string; onChange: (iso: string) => void; optional?: boolean;
@@ -272,7 +272,7 @@ export const CreatePriceAlertModal = memo(function CreatePriceAlertModal({
     <ModalWrapper onClose={onClose} title="Create Price Alert" icon={<Target className="w-4 h-4 text-blue-400" />}>
       <div className="space-y-4">
         <FieldRow label="Symbol">
-          <Select value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
+          <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
         </FieldRow>
         <FieldRow label="Condition">
           <div className="flex gap-2">
@@ -350,10 +350,10 @@ export const CreateZoneAlertModal = memo(function CreateZoneAlertModal({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <FieldRow label="Symbol">
-            <Select value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
+            <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
           </FieldRow>
           <FieldRow label="Timeframe">
-            <Select value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
+            <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
           </FieldRow>
         </div>
         <FieldRow label="Zone Type">
@@ -451,10 +451,10 @@ export const CreateTrendlineAlertModal = memo(function CreateTrendlineAlertModal
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <FieldRow label="Symbol">
-            <Select value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
+            <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
           </FieldRow>
           <FieldRow label="Timeframe">
-            <Select value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
+            <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
           </FieldRow>
         </div>
         {slope && (
@@ -673,7 +673,7 @@ function ModalWrapper({ title, icon, onClose, children }: {
   return createPortal(modal, document.body);
 }
 
-function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+export function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <label className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wider">{label}</label>
@@ -682,7 +682,7 @@ function FieldRow({ label, children }: { label: string; children: React.ReactNod
   );
 }
 
-function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: readonly string[] }) {
+export function AlertSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: readonly string[] }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
       className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary/50 appearance-none">
