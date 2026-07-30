@@ -356,6 +356,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                 <div className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white flex items-center">
                   {form.symbol}
                 </div>
+                <p className="text-[10px] mt-1" style={{ color: "#fb923c" }}>by default symbol selected</p>
               </FieldRow>
               <FieldRow label="Timeframe">
                 <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
