@@ -120,17 +120,6 @@ const PremiumSymbolCard = memo(function PremiumSymbolCard({ symbol }: { symbol: 
               {instrType(symbol)}
             </div>
           </div>
-          {/* Broker badge */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 3,
-            padding: "2px 7px", borderRadius: 5, width: "fit-content",
-            background: "rgba(96,165,250,.09)", border: "1px solid rgba(96,165,250,.18)",
-          }}>
-            <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
-              <path d="M5 0L9.5 5L5 10L.5 5Z" fill="#60a5fa" opacity=".9"/>
-            </svg>
-            <span style={{ fontSize: 8.5, fontWeight: 700, color: "#60a5fa", letterSpacing: ".08em", lineHeight: 1 }}>DELTA</span>
-          </div>
         </div>
       </div>
 
