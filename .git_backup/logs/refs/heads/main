@@ -1,0 +1,21 @@
+0000000000000000000000000000000000000000 3e776036e58fd64b3e44c706e69cc7fcd98a6f56 vortiq <60670258-vortiq@users.noreply.replit.com> 1785381001 +0000	branch: Created from origin/main
+3e776036e58fd64b3e44c706e69cc7fcd98a6f56 43e2344f11dd8a68ac577a61c8cddc65c9e5e9c3 Replit Agent <agent@replit.com> 1785381782 +0000	commit: Refactor SelectAlertTypeOverlay component logic
+43e2344f11dd8a68ac577a61c8cddc65c9e5e9c3 93d1cefe1b368d91304fb3efce040c79b740d9e9 Replit Agent <agent@replit.com> 1785381831 +0000	commit: Update alert type selection overlay logic
+93d1cefe1b368d91304fb3efce040c79b740d9e9 6adaa80ca57f39381bc335c2de8c7da852951a7b Replit Agent <agent@replit.com> 1785381883 +0000	commit: Remove unused code in SelectAlertTypeOverlay component
+6adaa80ca57f39381bc335c2de8c7da852951a7b 66537e12f5195e5b8d76455fa21ab4424bf77250 Replit Agent <agent@replit.com> 1785381919 +0000	commit: Remove unused alert type selection component code
+66537e12f5195e5b8d76455fa21ab4424bf77250 f7b0cbf4651a56e999a80f1f2bef04c7dccf9c32 Replit Agent <agent@replit.com> 1785381973 +0000	commit: Update select alert type overlay component
+f7b0cbf4651a56e999a80f1f2bef04c7dccf9c32 c900c746e54ed6be8388647a9aff67227a1ca1ce Replit Agent <agent@replit.com> 1785382000 +0000	commit: Remove unused code from select alert type overlay
+c900c746e54ed6be8388647a9aff67227a1ca1ce ca586f40a546c8f011767c851ae4ce79ebaeb3b2 Replit Agent <agent@replit.com> 1785382071 +0000	commit: Add implementation details to SelectAlertTypeOverlay component
+ca586f40a546c8f011767c851ae4ce79ebaeb3b2 1636625117595868700c2dd6a43ab41351fc51a4 Replit Agent <agent@replit.com> 1785382144 +0000	commit: Refactor alert type selection overlay component
+1636625117595868700c2dd6a43ab41351fc51a4 d58f8dc816c000cd00a0b617e7453c697e95cbfb Replit Agent <agent@replit.com> 1785382214 +0000	commit: Refactor alert type selection component logic
+d58f8dc816c000cd00a0b617e7453c697e95cbfb 482d6d10a790eeeb5910b6825ac0971bdd0846fc Replit Agent <agent@replit.com> 1785382291 +0000	commit: Refactor select alert type overlay component
+482d6d10a790eeeb5910b6825ac0971bdd0846fc cd49899e48e5d0babb2fff06a27080ee5b4fb585 Replit Agent <agent@replit.com> 1785382324 +0000	commit: Update alert type selection overlay component
+cd49899e48e5d0babb2fff06a27080ee5b4fb585 e434324fc3cd755d492cfd3ff9a25a158ffe3982 Replit Agent <agent@replit.com> 1785382389 +0000	commit: Update select alert type overlay component
+e434324fc3cd755d492cfd3ff9a25a158ffe3982 29f381d1c0cbc7c452ab588fd36754f77aab4f9b Replit Agent <agent@replit.com> 1785382448 +0000	commit: Update SelectAlertTypeOverlay component logic
+29f381d1c0cbc7c452ab588fd36754f77aab4f9b 250b90f8ba9fb08db9cddfa012e47531cc2f01fc Replit Agent <agent@replit.com> 1785382477 +0000	commit: Update alert type selection overlay logic
+250b90f8ba9fb08db9cddfa012e47531cc2f01fc aafc356501e76f1f4bf2e5e040800d5f715fcd36 Replit Agent <agent@replit.com> 1785382755 +0000	commit: Refactor the trading alerts page logic and layout
+aafc356501e76f1f4bf2e5e040800d5f715fcd36 5a32d053cf7842d24754e9152b1becf370ef82e0 Replit Agent <agent@replit.com> 1785382861 +0000	commit: Refine alerts page implementation
+5a32d053cf7842d24754e9152b1becf370ef82e0 5482debaa3af9b5d8acb89d8c7d3cf67d9599214 Replit Agent <agent@replit.com> 1785382988 +0000	commit: Update alert page implementation in trading journal
+5482debaa3af9b5d8acb89d8c7d3cf67d9599214 5fcdbb9e70a6171bdd1d0876e76601d836b56555 Replit Agent <agent@replit.com> 1785383164 +0000	commit: Update alerts page functionality
+5fcdbb9e70a6171bdd1d0876e76601d836b56555 f752275553840d3e49d61e116286ab0abae2504d Replit Agent <agent@replit.com> 1785383272 +0000	commit: Update trading journal and tablet index pages
+f752275553840d3e49d61e116286ab0abae2504d 77615409053d4920ae59a75ddb5bf6d2d2553bdd Replit Agent <agent@replit.com> 1785383389 +0000	commit: Clean up and reduce code in trading journal components
