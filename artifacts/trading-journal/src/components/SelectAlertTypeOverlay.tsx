@@ -113,13 +113,6 @@ const PremiumSymbolCard = memo(function PremiumSymbolCard({ symbol }: { symbol: 
             <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: ".01em", lineHeight: 1 }}>
               {symbol}
             </span>
-            <div style={{
-              padding: "2px 5px", borderRadius: 4,
-              background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.11)",
-              fontSize: 8.5, fontWeight: 700, color: "rgba(255,255,255,.5)", letterSpacing: ".07em", lineHeight: 1,
-            }}>
-              {instrType(symbol)}
-            </div>
           </div>
           {/* Full name */}
           {SYMBOL_CATALOG[symbol]?.description && (
