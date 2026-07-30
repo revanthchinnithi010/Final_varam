@@ -320,6 +320,17 @@ export default function TabletScreen() {
         source={{ uri: WEB_URL }}
         style={styles.webview}
         userAgent={TABLET_UA}
+        // --app-safe-top: 0px — the native spacer above the WebView already
+        // reserves insets.top, so web components that read this variable (e.g.
+        // AppHeader) must NOT add env(safe-area-inset-top) on top of it.
+        injectedJavaScriptBeforeContentLoaded={`
+          (function() {
+            var s = document.createElement('style');
+            s.textContent = ':root { --app-safe-top: 0px !important; }';
+            document.documentElement.appendChild(s);
+          })();
+          true;
+        `}
         injectedJavaScript={buildOrientationScript(isLandscape) + "\n" + RUBBER_BAND_JS}
         injectedJavaScriptForMainFrameOnly
         javaScriptEnabled

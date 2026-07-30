@@ -3,8 +3,9 @@
  * Markets, and Select Alert Type overlays.
  *
  * Spec (single source of truth):
- *   • Total height : calc(56px + env(safe-area-inset-top))
- *   • Top padding  : env(safe-area-inset-top)  — places content below notch on iOS
+ *   • Total height : calc(56px + var(--app-safe-top, env(safe-area-inset-top)))
+ *   • Top padding  : var(--app-safe-top, env(safe-area-inset-top))  — places content below notch on iOS.
+ *                    Tablet WebView overrides --app-safe-top to 0px (native spacer already reserves the inset).
  *   • Side padding : 16px each side
  *   • Gap          : 12px between back button and title
  *   • Back button  : 32 × 32 circle, transparent bg, no border
@@ -33,8 +34,12 @@ const HEADER_BASE: CSSProperties = {
   alignItems: "center",
   gap: 12,
   padding: "0 16px",
-  paddingTop: "env(safe-area-inset-top)",
-  height: "calc(56px + env(safe-area-inset-top))",
+  // Use --app-safe-top so the Expo/tablet WebView (which already reserves the
+  // status-bar height as a native spacer above the WebView) can override this
+  // to 0px and avoid double-counting the inset.  On plain web it falls back to
+  // env(safe-area-inset-top) and behaves exactly as before.
+  paddingTop: "var(--app-safe-top, env(safe-area-inset-top))",
+  height: "calc(56px + var(--app-safe-top, env(safe-area-inset-top)))",
   borderBottom: "1px solid rgba(255,255,255,0.07)",
   flexShrink: 0,
 };
