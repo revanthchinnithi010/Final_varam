@@ -40,6 +40,7 @@ import {
 import { useChartStore } from "@/store/chartStore";
 import { SYMBOL_CATALOG, deriveMeta } from "@/store/brokerWatchlistStore";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const DUR_OPEN  = 320;
@@ -464,15 +465,26 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
 
   const handleSave = () => {
     if (!canSave) return;
-    onSave({
-      id: `ta${Date.now()}`, type: "trendline",
-      symbol: form.symbol, timeframe: form.timeframe,
-      point1Price: parseFloat(form.p1Price), point1Time: form.p1Time,
-      point2Price: parseFloat(form.p2Price), point2Time: form.p2Time,
-      condition: form.condition, notes: form.notes,
-      status: "active", createdAt: new Date().toISOString(), triggeredAt: null,
-    });
-    onClose();
+    try {
+      onSave({
+        id: `ta${Date.now()}`, type: "trendline",
+        symbol: form.symbol, timeframe: form.timeframe,
+        point1Price: parseFloat(form.p1Price), point1Time: form.p1Time,
+        point2Price: parseFloat(form.p2Price), point2Time: form.p2Time,
+        condition: form.condition, notes: form.notes,
+        status: "active", createdAt: new Date().toISOString(), triggeredAt: null,
+      });
+      toast.success("Trendline alert created", {
+        description: `${form.symbol} · ${form.timeframe} · ${form.condition}`,
+        duration: 3000,
+      });
+      onClose();
+    } catch {
+      toast.error("Failed to create alert", {
+        description: "Something went wrong. Please try again.",
+        duration: 4000,
+      });
+    }
   };
 
   const slope = form.p1Price && form.p2Price
