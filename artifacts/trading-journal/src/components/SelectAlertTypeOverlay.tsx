@@ -726,38 +726,42 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
             </div>
 
             {/* Notes */}
-            <FieldRow label="Notes">
-              <textarea
-                rows={2}
-                placeholder="Trendline notes..."
-                value={form.notes}
-                onChange={e => {
-                  setForm(f => ({ ...f, notes: e.target.value }));
-                  const el = e.target;
-                  el.style.height = "auto";
-                  el.style.height = `${el.scrollHeight}px`;
-                }}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50"
-                style={{ overflow: "hidden", minHeight: "64px" }}
-              />
-            </FieldRow>
+            <div className="pb-2">
+              <FieldRow label="Notes">
+                <textarea
+                  rows={2}
+                  placeholder="Trendline notes..."
+                  value={form.notes}
+                  onChange={e => {
+                    setForm(f => ({ ...f, notes: e.target.value }));
+                    const el = e.target;
+                    el.style.height = "auto";
+                    el.style.height = `${el.scrollHeight}px`;
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  style={{ overflow: "hidden", minHeight: "64px" }}
+                />
+              </FieldRow>
+            </div>
 
             {/* Condition */}
-            <FieldRow label="Alert Condition">
-              <div className="flex gap-2">
-                {(["touch", "break", "retest"] as const).map(c => (
-                  <AnimatedButton key={c} onClick={() => setForm(f => ({ ...f, condition: c }))}
-                    className={cn(
-                      "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",
-                      form.condition === c
-                        ? "bg-primary/20 border-primary/40 text-primary"
-                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
-                    )}>
-                    {c}
-                  </AnimatedButton>
-                ))}
-              </div>
-            </FieldRow>
+            <div className="pb-2">
+              <FieldRow label="Alert Condition">
+                <div className="flex gap-2">
+                  {(["touch", "break", "retest"] as const).map(c => (
+                    <AnimatedButton key={c} onClick={() => setForm(f => ({ ...f, condition: c }))}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",
+                        form.condition === c
+                          ? "bg-primary/20 border-primary/40 text-primary"
+                          : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                      )}>
+                      {c}
+                    </AnimatedButton>
+                  ))}
+                </div>
+              </FieldRow>
+            </div>
 
             {/* ── OR ENTER MANUALLY collapsible ── */}
             <div>
