@@ -604,7 +604,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
             </div>
 
             {/* ── SELECT EXISTING DRAWING ── */}
-            <div>
+            <div style={{ marginTop: 8 }}>
               <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
                 Select Existing Drawing
               </p>
