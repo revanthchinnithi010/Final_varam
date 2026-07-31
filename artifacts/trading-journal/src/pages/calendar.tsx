@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useGetCalendarHeatmap, useListTrades } from "@workspace/api-client-react";
 import { useCurrencyFormatter } from "@/store/currencyStore";
 import { motion, AnimatePresence } from "motion/react";
-import { tweenFast, COMPOSITOR_EASE } from "@/animations/motion";
+import { tweenFast } from "@/animations/motion";
 import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Calendar, BarChart2,
   ArrowLeft, ExternalLink, ImageIcon, Tag, AlertTriangle, FileText,
@@ -15,7 +15,7 @@ import { TV_LINKS } from "@/data/sampleData";
 
 const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/* ─── intensity heat style (unchanged) ──────────────────────────────────────── */
+/* ─── intensity heat style ───────────────────────────────────────────────────── */
 
 function getIntensityStyle(pnl: number, trades: number, maxAbs: number, isLight: boolean): React.CSSProperties {
   if (trades === 0) return {};
@@ -53,8 +53,8 @@ function getIntensityStyle(pnl: number, trades: number, maxAbs: number, isLight:
 
 /* ─── animation constants ────────────────────────────────────────────────────── */
 import { COMPOSITOR_EASE as EASE_OPEN, COMPOSITOR_EASE_CLOSE as EASE_CLOSE } from "@/animations/motion";
-const DUR_OPEN   = 320; // sheet-level open — larger surface needs more time
-const DUR_CLOSE  = 240;
+const DUR_OPEN  = 320;
+const DUR_CLOSE = 240;
 
 /* ─── Trade type (local subset from API) ────────────────────────────────────── */
 
@@ -75,8 +75,28 @@ type Trade = {
   screenshot?: string | null;
   setupTags?: string | null;
   mistakeTags?: string | null;
+  /** legacy field from mock — treated same as setupTags */
+  tags?: string | null;
   notes?: string | null;
 };
+
+/* ─── helpers ────────────────────────────────────────────────────────────────── */
+
+function fmtTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
+function fmtDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
 
 /* ─── DailySummarySheet ──────────────────────────────────────────────────────── */
 
@@ -93,8 +113,7 @@ const DailySummarySheet = memo(function DailySummarySheet({
   const hasOpenedRef = useRef(false);
   if (date) hasOpenedRef.current = true;
 
-  /* visible drives the CSS transition — setTimeout(0)+rAF guarantees the browser
-     paints the closed position (translateY 100%) before the slide starts. */
+  /* visible drives the CSS transition */
   const [visible, setVisible] = useState(false);
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
@@ -147,10 +166,18 @@ const DailySummarySheet = memo(function DailySummarySheet({
   /* Derived day stats */
   const dayStats = useMemo(() => {
     if (!trades.length) return null;
-    const totalPnl  = trades.reduce((s, t) => s + t.pnl, 0);
-    const wins      = trades.filter(t => t.pnl > 0).length;
-    const losses    = trades.filter(t => t.pnl < 0).length;
-    return { totalPnl, wins, losses, count: trades.length };
+    const totalPnl    = trades.reduce((s, t) => s + t.pnl, 0);
+    const wins        = trades.filter(t => t.pnl > 0);
+    const losses      = trades.filter(t => t.pnl < 0);
+    const grossProfit = wins.reduce((s, t) => s + t.pnl, 0);
+    const grossLoss   = losses.reduce((s, t) => s + t.pnl, 0);
+    const rrValues    = trades.map(t => t.riskRewardRatio).filter((v): v is number => v != null);
+    const avgRR       = rrValues.length > 0 ? rrValues.reduce((s, v) => s + v, 0) / rrValues.length : null;
+    const winRate     = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
+    return {
+      totalPnl, grossProfit, grossLoss, avgRR, winRate,
+      wins: wins.length, losses: losses.length, count: trades.length,
+    };
   }, [trades]);
 
   /* Friendly date label */
@@ -189,7 +216,7 @@ const DailySummarySheet = memo(function DailySummarySheet({
         style={{
           position: "absolute",
           left: 0, right: 0, bottom: 0,
-          maxHeight: "85dvh",
+          maxHeight: "88dvh",
           display: "flex", flexDirection: "column",
           background: "#0a0a0a",
           borderRadius: "20px 20px 0 0",
@@ -220,11 +247,58 @@ const DailySummarySheet = memo(function DailySummarySheet({
             )}
           </div>
           {dayStats && (
-            <span className={`text-[16px] font-black ${dayStats.totalPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            <span className={`text-[17px] font-black ${dayStats.totalPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
               {dayStats.totalPnl >= 0 ? "+" : ""}{fc(dayStats.totalPnl)}
             </span>
           )}
         </div>
+
+        {/* ── Stats Grid ── */}
+        {dayStats && (
+          <div
+            className="shrink-0 grid grid-cols-3 gap-px"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.04)" }}
+          >
+            {/* Row 1 */}
+            {[
+              { label: "Total Trades", value: String(dayStats.count), color: "text-white" },
+              { label: "Wins",         value: String(dayStats.wins),  color: "text-emerald-400" },
+              { label: "Losses",       value: String(dayStats.losses), color: dayStats.losses > 0 ? "text-red-400" : "text-white/50" },
+            ].map(s => (
+              <div key={s.label} className="py-3 px-3 flex flex-col items-center" style={{ background: "#0a0a0a" }}>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/35 mb-1">{s.label}</p>
+                <p className={`text-[15px] font-black leading-none ${s.color}`}>{s.value}</p>
+              </div>
+            ))}
+            {/* Row 2 */}
+            {[
+              { label: "Win Rate",    value: `${dayStats.winRate.toFixed(0)}%`,
+                color: dayStats.winRate >= 50 ? "text-emerald-400" : "text-red-400" },
+              { label: "Gross Profit", value: dayStats.grossProfit > 0 ? `+${fc(dayStats.grossProfit)}` : "—",
+                color: "text-emerald-400" },
+              { label: "Gross Loss",   value: dayStats.grossLoss < 0 ? fc(dayStats.grossLoss) : "—",
+                color: dayStats.grossLoss < 0 ? "text-red-400" : "text-white/50" },
+            ].map(s => (
+              <div key={s.label} className="py-3 px-3 flex flex-col items-center" style={{ background: "#0a0a0a" }}>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/35 mb-1">{s.label}</p>
+                <p className={`text-[13px] font-black leading-none ${s.color}`}>{s.value}</p>
+              </div>
+            ))}
+            {/* Row 3 */}
+            {[
+              { label: "Net P&L",  value: `${dayStats.totalPnl >= 0 ? "+" : ""}${fc(dayStats.totalPnl)}`,
+                color: dayStats.totalPnl >= 0 ? "text-emerald-400" : "text-red-400" },
+              { label: "Avg RR",   value: dayStats.avgRR != null ? `${dayStats.avgRR.toFixed(2)}R` : "—",
+                color: "text-white/80" },
+              { label: "Total Fees", value: "—", color: "text-white/50" },
+            ].map(s => (
+              <div key={s.label} className="py-3 px-3 flex flex-col items-center" style={{ background: "#0a0a0a" }}>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/35 mb-1">{s.label}</p>
+                <p className={`text-[13px] font-black leading-none ${s.color}`}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Trade list */}
         <div
@@ -298,11 +372,18 @@ const DailySummarySheet = memo(function DailySummarySheet({
                           </>
                         )}
                       </span>
-                      {trade.riskRewardRatio != null && (
-                        <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.30)" }}>
-                          {trade.riskRewardRatio.toFixed(2)}R
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {trade.riskRewardRatio != null && (
+                          <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.30)" }}>
+                            {trade.riskRewardRatio.toFixed(2)}R
+                          </span>
+                        )}
+                        {trade.entryDate && (
+                          <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                            {fmtTime(trade.entryDate)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   </AnimatedListItem>
@@ -317,9 +398,7 @@ const DailySummarySheet = memo(function DailySummarySheet({
   );
 });
 
-/* ─── TradeDetailSheet ────────────────────────────────────────────────────────
-   Reuses the exact same Radix Sheet + content as trades.tsx.
-   The trade object is passed in directly (already fetched by DailySummarySheet).  */
+/* ─── TradeDetailSheet ─────────────────────────────────────────────────────── */
 
 interface TradeDetailSheetProps {
   trade: Trade | null;
@@ -328,6 +407,10 @@ interface TradeDetailSheetProps {
 }
 
 const TradeDetailSheet = memo(function TradeDetailSheet({ trade, onClose, fc }: TradeDetailSheetProps) {
+  /* Resolve tags: API uses setupTags/mistakeTags; mock may use legacy `tags` */
+  const setupTags   = trade?.setupTags   ?? trade?.tags   ?? null;
+  const mistakeTags = trade?.mistakeTags ?? null;
+
   return (
     <Sheet open={!!trade} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
@@ -340,12 +423,12 @@ const TradeDetailSheet = memo(function TradeDetailSheet({ trade, onClose, fc }: 
           "--tw-enter-opacity"     : "0.96",
           "--tw-exit-opacity"      : "0",
           animationDuration        : "220ms",
-          animationTimingFunction  : COMPOSITOR_EASE,
+          animationTimingFunction  : EASE_OPEN,
         } as React.CSSProperties}
       >
         {trade && (
           <>
-            {/* Nav header — symbol + side badge folded in */}
+            {/* Nav header */}
             <div className="flex items-center gap-3 px-4 h-14 shrink-0" style={{ background: "#000000", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <button
                 onClick={onClose}
@@ -364,34 +447,44 @@ const TradeDetailSheet = memo(function TradeDetailSheet({ trade, onClose, fc }: 
               </span>
             </div>
 
-            {/* Scrollable body — content starts immediately below header */}
+            {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto px-6 pt-3 pb-5 space-y-6" style={{ background: "#000000" }}>
-              {/* Date + PnL — open strip, no card box */}
-              <div className="flex items-center justify-between px-1 pb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                <div>
-                  <p className="text-[9px] font-semibold text-white/35 uppercase tracking-widest mb-0.5">Date</p>
-                  <p className="text-[13px] font-semibold text-white/80">
-                    {new Date(trade.entryDate).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}
-                  </p>
+
+              {/* Date/Time + PnL strip */}
+              <div className="flex items-start justify-between px-1 pb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="space-y-1">
+                  <div>
+                    <p className="text-[9px] font-semibold text-white/35 uppercase tracking-widest mb-0.5">Entry</p>
+                    <p className="text-[13px] font-semibold text-white/80">{fmtDate(trade.entryDate)}</p>
+                    <p className="text-[11px] text-white/45">{fmtTime(trade.entryDate)}</p>
+                  </div>
+                  {trade.exitDate && (
+                    <div>
+                      <p className="text-[9px] font-semibold text-white/35 uppercase tracking-widest mb-0.5">Exit</p>
+                      <p className="text-[13px] font-semibold text-white/80">{fmtDate(trade.exitDate)}</p>
+                      <p className="text-[11px] text-white/45">{fmtTime(trade.exitDate)}</p>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-[9px] font-semibold text-white/35 uppercase tracking-widest mb-0.5">
                     {trade.pnl >= 0 ? "Profit" : "Loss"}
                   </p>
-                  <p className="text-[20px] font-black leading-tight" style={{ color: trade.pnl >= 0 ? "#34d399" : "#f87171" }}>
+                  <p className="text-[22px] font-black leading-tight" style={{ color: trade.pnl >= 0 ? "#34d399" : "#f87171" }}>
                     {trade.pnl >= 0 ? "+" : ""}{fc(trade.pnl)}
                   </p>
                 </div>
               </div>
+
               {/* Metrics grid */}
               <div className="grid grid-cols-2 gap-2.5">
                 {[
-                  { label: "Entry",        value: fc(trade.entryPrice) },
-                  { label: "Exit",         value: trade.exitPrice == null ? "—" : fc(trade.exitPrice) },
+                  { label: "Entry",         value: trade.entryPrice < 1 ? trade.entryPrice.toFixed(5) : fc(trade.entryPrice) },
+                  { label: "Exit",          value: trade.exitPrice == null ? "—" : trade.exitPrice < 1 ? trade.exitPrice.toFixed(5) : fc(trade.exitPrice) },
                   { label: "Risk / Reward", value: trade.riskRewardRatio ? `${trade.riskRewardRatio.toFixed(2)}R` : "—" },
-                  { label: "Quantity",     value: String(trade.quantity) },
-                  { label: "Stop Loss",    value: trade.stopLoss ? fc(trade.stopLoss) : "—" },
-                  { label: "Take Profit",  value: trade.takeProfit ? fc(trade.takeProfit) : "—" },
+                  { label: "Quantity",      value: String(trade.quantity) },
+                  { label: "Stop Loss",     value: trade.stopLoss ? fc(trade.stopLoss) : "—" },
+                  { label: "Take Profit",   value: trade.takeProfit ? fc(trade.takeProfit) : "—" },
                 ].map(({ label, value }) => (
                   <div key={label} className="p-3 rounded-xl border" style={{ background: "#111111", borderColor: "rgba(255,255,255,0.09)" }}>
                     <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">{label}</p>
@@ -439,31 +532,31 @@ const TradeDetailSheet = memo(function TradeDetailSheet({ trade, onClose, fc }: 
               {/* Tags */}
               <div className="space-y-3">
                 <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Tags</p>
-                {trade.setupTags && (
+                {setupTags && (
                   <div>
                     <p className="text-[11px] text-muted-foreground mb-1.5 flex items-center gap-1">
                       <Tag className="w-3 h-3" /> Setup
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {trade.setupTags.split(",").filter(Boolean).map(tag => (
-                        <span key={tag} className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-primary/12 text-primary border border-primary/20">{tag}</span>
+                      {setupTags.split(",").filter(Boolean).map(tag => (
+                        <span key={tag} className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-primary/12 text-primary border border-primary/20">{tag.trim()}</span>
                       ))}
                     </div>
                   </div>
                 )}
-                {trade.mistakeTags && (
+                {mistakeTags && (
                   <div>
                     <p className="text-[11px] text-muted-foreground mb-1.5 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3 text-red-400/70" /> Mistakes
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {trade.mistakeTags.split(",").filter(Boolean).map(tag => (
-                        <span key={tag} className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-red-500/10 text-red-400 border border-red-500/20">{tag}</span>
+                      {mistakeTags.split(",").filter(Boolean).map(tag => (
+                        <span key={tag} className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-red-500/10 text-red-400 border border-red-500/20">{tag.trim()}</span>
                       ))}
                     </div>
                   </div>
                 )}
-                {!trade.setupTags && !trade.mistakeTags && (
+                {!setupTags && !mistakeTags && (
                   <p className="text-[12px] text-muted-foreground/50 italic">No tags recorded</p>
                 )}
               </div>
@@ -489,7 +582,7 @@ const TradeDetailSheet = memo(function TradeDetailSheet({ trade, onClose, fc }: 
   );
 });
 
-/* ─── Main CalendarPage ───────────────────────────────────────────────────────── */
+/* ─── Main CalendarPage ─────────────────────────────────────────────────────── */
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -555,9 +648,7 @@ export default function CalendarPage() {
   const isCurrentMonth = new Date().getMonth() === currentDate.getMonth() && new Date().getFullYear() === currentDate.getFullYear();
   const todayStr       = new Date().toISOString().slice(0, 10);
 
-  /* Find the trade object for the trade detail sheet, from the already-fetched
-     daily list via DailySummarySheet's internal useListTrades call. We hold a
-     separate lightweight fetch here only when selectedTradeId is set. */
+  /* Find the trade for the detail sheet from the already-fetched daily list */
   const { data: dayTradesForDetail } = useListTrades(
     { date: selectedDate ?? undefined, limit: 100 },
     { query: { enabled: !!selectedTradeId && !!selectedDate } },
@@ -568,6 +659,12 @@ export default function CalendarPage() {
 
   const closeDailySummary = useCallback(() => setSelectedDate(null), []);
   const closeTradeDetail  = useCallback(() => setSelectedTradeId(null), []);
+
+  /* Also close trade detail when daily summary closes */
+  const handleCloseDailySummary = useCallback(() => {
+    setSelectedTradeId(null);
+    setSelectedDate(null);
+  }, []);
 
   const navBtnClass = isLight
     ? "w-9 h-9 flex items-center justify-center rounded-xl bg-black/[0.04] border border-black/[0.08] text-muted-foreground hover:text-foreground hover:bg-black/[0.07] hover:border-black/[0.14] transition-all"
@@ -702,10 +799,16 @@ export default function CalendarPage() {
                             borderColor:     isToday ? "rgba(183,255,90,0.28)" : "rgba(255,255,255,0.05)",
                           };
 
+                      /* Abbreviated PnL for calendar cell — fits on small cells */
+                      const pnlAbs = Math.abs(cell.data.pnl);
+                      const pnlLabel = pnlAbs >= 1000
+                        ? `${cell.data.pnl >= 0 ? "+" : "-"}$${(pnlAbs / 1000).toFixed(1)}k`
+                        : `${cell.data.pnl >= 0 ? "+" : "-"}$${pnlAbs.toFixed(0)}`;
+
                       return (
                         <div
                           key={cell.date}
-                          className="relative aspect-square rounded-xl border border-transparent flex flex-col p-2 transition-all duration-200 hover:scale-[1.04] hover:z-10"
+                          className="relative aspect-square rounded-xl border border-transparent flex flex-col p-1.5 sm:p-2 transition-all duration-200 hover:scale-[1.04] hover:z-10 active:scale-[0.97]"
                           style={{
                             ...(hasData ? getIntensityStyle(cell.data.pnl, cell.data.trades, maxAbs, isLight) : emptyStyle),
                             cursor: hasData ? "pointer" : "default",
@@ -725,12 +828,11 @@ export default function CalendarPage() {
 
                           {hasData && (
                             <div className="mt-auto">
-                              <div className={`text-[10px] font-bold leading-tight ${cell.data.pnl >= 0 ? "text-emerald-400" : "text-red-400"} hidden sm:block`}>
-                                {cell.data.pnl >= 0 ? "+" : ""}{Math.abs(cell.data.pnl) >= 1000
-                                  ? `$${(Math.abs(cell.data.pnl) / 1000).toFixed(1)}k`
-                                  : `$${Math.abs(cell.data.pnl).toFixed(0)}`}
+                              {/* PnL — shown on all sizes; abbreviated for small cells */}
+                              <div className={`text-[9px] sm:text-[10px] font-bold leading-tight truncate ${cell.data.pnl >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                                {pnlLabel}
                               </div>
-                              <div className="text-[9px] text-muted-foreground/50 leading-none hidden sm:block">
+                              <div className="text-[8px] sm:text-[9px] text-muted-foreground/50 leading-none">
                                 {cell.data.trades}t
                               </div>
                             </div>
@@ -803,7 +905,7 @@ export default function CalendarPage() {
       {/* Daily summary bottom sheet */}
       <DailySummarySheet
         date={selectedDate}
-        onClose={closeDailySummary}
+        onClose={handleCloseDailySummary}
         onSelectTrade={(id) => setSelectedTradeId(id)}
         fc={fc}
       />
