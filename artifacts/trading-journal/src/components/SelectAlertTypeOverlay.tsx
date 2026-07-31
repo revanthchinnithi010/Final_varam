@@ -581,10 +581,10 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                       paddingRight: 12,
                       borderRadius: 8,
                       border: isActive
-                        ? "1.5px solid #3b82f6"
+                        ? "1.5px solid #f97316"
                         : "1px solid rgba(255,255,255,0.10)",
                       background: isActive
-                        ? "#3b82f6"
+                        ? "#f97316"
                         : "rgba(255,255,255,0.03)",
                       color: isActive ? "#ffffff" : "rgba(255,255,255,0.45)",
                       fontSize: 12,
