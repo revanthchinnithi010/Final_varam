@@ -665,6 +665,11 @@ const CalendarHeatmap = memo(function CalendarHeatmap({
     return styles;
   }, [dayMap, maxAbs]);
 
+  const todayStr = useMemo(() => {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+  }, []);
+
   const days: React.ReactNode[] = [];
   for (let i = 0; i < firstDay; i++) {
     days.push(<div key={`empty-${i}`} />);
@@ -672,14 +677,18 @@ const CalendarHeatmap = memo(function CalendarHeatmap({
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     const entry = dayMap[dateStr];
+    const isToday = dateStr === todayStr;
     days.push(
       <div
         key={dateStr}
         onClick={() => entry && entry.trades > 0 && onDateClick(dateStr)}
-        className={`relative rounded-lg aspect-square flex flex-col items-center justify-center border border-transparent transition-opacity active:opacity-60 ${
+        className={`relative rounded-lg aspect-square flex flex-col items-center justify-center border transition-opacity active:opacity-60 ${
           entry && entry.trades > 0 ? "cursor-pointer" : "cursor-default"
         }`}
-        style={cellStyles[dateStr]}
+        style={{
+          ...cellStyles[dateStr],
+          ...(isToday ? { outline: "2px solid #f97316", outlineOffset: "-1px" } : {}),
+        }}
       >
         <span className="text-[10px] font-semibold leading-none text-white/90">{d}</span>
         {entry && entry.trades > 0 && (
