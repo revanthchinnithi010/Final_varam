@@ -682,6 +682,14 @@ export function DrawingAlertModal({
               options={DRAWING_OPTIONS}
             />
 
+            {/* Condition */}
+            <PillSelector
+              label="Alert Condition"
+              value={condition as DrawingType}
+              onChange={setCondition as (v: DrawingType) => void}
+              options={CONDITIONS[drawingType]}
+            />
+
             {/* Timeframe */}
             <div className="flex flex-col gap-2">
               <span className="text-[9px] font-bold uppercase tracking-widest"
@@ -835,14 +843,6 @@ export function DrawingAlertModal({
                 }}
               />
             </div>
-
-            {/* Condition */}
-            <PillSelector
-              label="Alert Condition"
-              value={condition as DrawingType}
-              onChange={setCondition as (v: DrawingType) => void}
-              options={CONDITIONS[drawingType]}
-            />
 
             {/* Error */}
             <AnimatePresence>
