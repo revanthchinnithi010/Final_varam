@@ -21,6 +21,7 @@ import {
 } from "@/data/alertsData";
 import { useAlertStore } from "@/store/alertStore";
 import { useLiveMarketContext } from "@/contexts/LiveMarketContext";
+import { toast } from "sonner";
 import { useLocation } from "wouter";
 import {
   PageTransition,
@@ -420,10 +421,15 @@ export const CreateTrendlineAlertModal = memo(function CreateTrendlineAlertModal
   onSave: (a: TrendlineAlert) => void;
   initialSymbol?: string;
 }) {
-  const [form, setForm] = useState({
-    symbol: initialSymbol ?? "NAS100", timeframe: "1H",
-    p1Price: "", p1Time: "", p2Price: "", p2Time: "",
-    condition: "touch" as TrendlineAlert["condition"], notes: "",
+  const [form, setForm] = useState(() => {
+    const now = new Date();
+    const plus1h = new Date(now.getTime() + 60 * 60 * 1000);
+    return {
+      symbol: initialSymbol ?? "NAS100", timeframe: "1H",
+      p1Price: "", p1Time: now.toISOString(),
+      p2Price: "", p2Time: plus1h.toISOString(),
+      condition: "touch" as TrendlineAlert["condition"], notes: "",
+    };
   });
 
   const timeInvalid = !!(form.p1Time && form.p2Time && new Date(form.p2Time) < new Date(form.p1Time));
@@ -438,6 +444,10 @@ export const CreateTrendlineAlertModal = memo(function CreateTrendlineAlertModal
       point2Price: parseFloat(form.p2Price), point2Time: form.p2Time,
       condition: form.condition, notes: form.notes,
       status: "active", createdAt: new Date().toISOString(), triggeredAt: null,
+    });
+    toast.success("Trendline alert created", {
+      description: `${form.symbol} · ${form.condition} · ${form.timeframe}`,
+      duration: 3000,
     });
     onClose();
   };
