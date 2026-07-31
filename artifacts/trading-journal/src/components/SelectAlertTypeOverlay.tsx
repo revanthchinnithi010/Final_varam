@@ -519,7 +519,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                   overflow: "hidden",
                 }}>
                   {/* Left orange accent bar */}
-                  <div style={{ width: 3, background: "#f97316", flexShrink: 0, borderRadius: "0 0 0 0" }} />
+                  <div style={{ width: 3, background: "#fb923c", flexShrink: 0, borderRadius: "0 0 0 0" }} />
 
                   <div style={{ padding: "11px 14px" }}>
                     <p style={{
@@ -571,10 +571,10 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                       paddingRight: 12,
                       borderRadius: 8,
                       border: isActive
-                        ? "1.5px solid #f97316"
+                        ? "1.5px solid #fb923c"
                         : "1px solid rgba(255,255,255,0.10)",
                       background: isActive
-                        ? "#f97316"
+                        ? "#fb923c"
                         : "rgba(255,255,255,0.03)",
                       color: isActive ? "#ffffff" : "rgba(255,255,255,0.45)",
                       fontSize: 12,
@@ -628,7 +628,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                             marginTop: 2, width: 18, height: 18, borderRadius: "50%",
                             flexShrink: 0,
                             border: isSelected ? "none" : "2px solid rgba(255,255,255,0.22)",
-                            background: isSelected ? "#f97316" : "transparent",
+                            background: isSelected ? "#fb923c" : "transparent",
                             transition: "background 0.15s, border-color 0.15s",
                           }} />
 
@@ -642,7 +642,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                                 <span style={{
                                   fontSize: 13, fontWeight: 700, letterSpacing: "0.05em",
                                   textTransform: "uppercase",
-                                  color: isSelected ? "#f97316" : "rgba(255,255,255,0.85)",
+                                  color: isSelected ? "#fb923c" : "rgba(255,255,255,0.85)",
                                 }}>
                                   {d.toolType === "ray" ? "Ray" : "Trendline"}
                                 </span>
