@@ -741,6 +741,23 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
               />
             </FieldRow>
 
+            {/* Condition */}
+            <FieldRow label="Alert Condition">
+              <div className="flex gap-2">
+                {(["touch", "break", "retest"] as const).map(c => (
+                  <AnimatedButton key={c} onClick={() => setForm(f => ({ ...f, condition: c }))}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",
+                      form.condition === c
+                        ? "bg-primary/20 border-primary/40 text-primary"
+                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                    )}>
+                    {c}
+                  </AnimatedButton>
+                ))}
+              </div>
+            </FieldRow>
+
             {/* ── OR ENTER MANUALLY divider ── */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-white/[0.06]" />
@@ -802,23 +819,6 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Condition */}
-            <FieldRow label="Alert Condition">
-              <div className="flex gap-2">
-                {(["touch", "break", "retest"] as const).map(c => (
-                  <AnimatedButton key={c} onClick={() => setForm(f => ({ ...f, condition: c }))}
-                    className={cn(
-                      "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",
-                      form.condition === c
-                        ? "bg-primary/20 border-primary/40 text-primary"
-                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
-                    )}>
-                    {c}
-                  </AnimatedButton>
-                ))}
-              </div>
-            </FieldRow>
 
             {/* Actions */}
             <div className="flex gap-2 pt-1">
