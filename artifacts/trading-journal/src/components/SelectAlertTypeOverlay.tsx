@@ -805,7 +805,14 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
               </AnimatedButton>
               <AnimatedButton
                 disabled={!canSave}
-                className="flex-1 h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  height: 44,
+                  borderRadius: 999,
+                  background: "#fb923c",
+                  color: "#fff",
+                  letterSpacing: "0.02em",
+                }}
                 onClick={handleSave}>
                 Create Trendline
               </AnimatedButton>
