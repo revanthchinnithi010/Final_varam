@@ -177,8 +177,8 @@ export function UTCDateTimePicker({
   };
   const init = toUtcParts(value);
   const [date, setDate] = useState(init.d);
-  const [hh, setHh]     = useState(init.hh);
-  const [mm, setMm]     = useState(init.mm);
+  const [hh, setHh]     = useState(init.hh || "00");
+  const [mm, setMm]     = useState(init.mm || "00");
 
   const emit = (d: string, h: string, m: string) => {
     if (d && h !== "" && m !== "") {
