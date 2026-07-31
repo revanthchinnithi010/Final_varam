@@ -369,25 +369,34 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
   const chartInterval = useChartStore(s => s.interval);
   const chartHumanTf  = intervalToHumanTf(chartInterval);
 
-  const [form, setForm] = useState({
-    symbol:       symbol ?? "",
-    timeframe:    chartHumanTf,
-    p1Price: "", p1Time: "",
-    p2Price: "", p2Time: "",
-    condition:    "touch" as TrendlineAlert["condition"],
-    notes:        "",
-    atrPeriod:    14,
-    atrMultiplier: 0.15,
+  const [form, setForm] = useState(() => {
+    const now = new Date();
+    const plus1h = new Date(now.getTime() + 60 * 60 * 1000);
+    return {
+      symbol:       symbol ?? "",
+      timeframe:    chartHumanTf,
+      p1Price: "", p1Time: now.toISOString(),
+      p2Price: "", p2Time: plus1h.toISOString(),
+      condition:    "touch" as TrendlineAlert["condition"],
+      notes:        "",
+      atrPeriod:    14,
+      atrMultiplier: 0.15,
+    };
   });
 
-  // Sync symbol AND timeframe every time the screen opens so it always reflects
-  // the chart that is currently visible — not whatever it was the last time.
+  // Sync symbol, timeframe, and default times every time the screen opens so it
+  // always reflects the chart that is currently visible — not whatever it was
+  // the last time. Times reset to now/+1h so the button is immediately enabled.
   useEffect(() => {
     if (open) {
+      const now = new Date();
+      const plus1h = new Date(now.getTime() + 60 * 60 * 1000);
       setForm(f => ({
         ...f,
         symbol:    symbol ?? "",
         timeframe: intervalToHumanTf(useChartStore.getState().interval),
+        p1Time:    now.toISOString(),
+        p2Time:    plus1h.toISOString(),
       }));
     }
   }, [open, symbol]);
@@ -507,7 +516,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
         form.condition === "touch"         ? "Exact Touch"   :
         form.condition === "break"         ? "Trendline Break" :
         form.condition;
-      toast.success("Trendline alert created", {
+      toast.success("Trendline Alert Created Successfully", {
         description: `${form.symbol} · ${form.timeframe} · ${condLabel}`,
         duration: 3000,
       });

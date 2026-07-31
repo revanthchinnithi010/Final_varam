@@ -181,6 +181,17 @@ export function UTCDateTimePicker({
   const [hh, setHh]     = useState(init.hh || "00");
   const [mm, setMm]     = useState(init.mm || "00");
 
+  // Sync picker display when the value prop changes externally (e.g. when the
+  // overlay resets times on open, or a drawing auto-populates the fields).
+  useEffect(() => {
+    const parts = toUtcParts(value);
+    if (parts.d) {
+      setDate(parts.d);
+      setHh(parts.hh);
+      setMm(parts.mm);
+    }
+  }, [value]);
+
   const emit = (d: string, h: string, m: string) => {
     if (d && h !== "" && m !== "") {
       onChange(`${d}T${h.padStart(2, "0")}:${m.padStart(2, "0")}:00.000Z`);
