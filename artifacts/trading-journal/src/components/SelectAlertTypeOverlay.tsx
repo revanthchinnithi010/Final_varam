@@ -19,7 +19,6 @@ import { useAlertStore } from "@/store/alertStore";
 import { useDrawingStore } from "@/store/drawingStore";
 import type { Drawing } from "@/types/drawing";
 import {
-  CreatePriceAlertModal,
   FieldRow,
   AlertSelect,
   UTCDateTimePicker,
@@ -338,6 +337,166 @@ function fmtUtcTime(sec: number): string {
     hour: "2-digit", minute: "2-digit", timeZone: "UTC",
   }) + " UTC";
 }
+
+// ── Price Alert full-screen screen ───────────────────────────────────────────
+const PriceAlertScreen = memo(function PriceAlertScreen({
+  open, symbol, onClose, onSave,
+}: {
+  open: boolean;
+  symbol: string;
+  onClose: () => void;
+  onSave: (a: PriceAlert) => void;
+}) {
+  const [visible, setVisible] = useState(false);
+  const hasOpenedRef = useRef(false);
+  if (open) hasOpenedRef.current = true;
+
+  useEffect(() => {
+    if (open) {
+      let raf: number;
+      const t = setTimeout(() => { raf = requestAnimationFrame(() => setVisible(true)); }, 0);
+      return () => { clearTimeout(t); cancelAnimationFrame(raf); };
+    }
+    setVisible(false);
+    return undefined;
+  }, [open]);
+
+  const [form, setForm] = useState({
+    symbol: symbol ?? "NAS100",
+    condition: "above" as "above" | "below" | "touch",
+    targetPrice: "", notes: "", expiry: "",
+  });
+
+  // Sync symbol each time the screen opens.
+  useEffect(() => {
+    if (open) {
+      setForm(f => ({ ...f, symbol: symbol ?? "" }));
+    }
+  }, [open, symbol]);
+
+  const canSave = !!form.targetPrice;
+
+  const handleSave = () => {
+    if (!canSave) return;
+    try {
+      onSave({
+        id: `pa${Date.now()}`, type: "price",
+        symbol: form.symbol, condition: form.condition,
+        targetPrice: parseFloat(form.targetPrice),
+        currentPrice: 0, notes: form.notes,
+        status: "active", expiry: form.expiry || null,
+        createdAt: new Date().toISOString(), triggeredAt: null,
+      });
+      toast.success("Price Alert Created Successfully", {
+        description: `${form.symbol} · ${form.condition} · ${form.targetPrice}`,
+        duration: 3000,
+      });
+      onClose();
+    } catch {
+      toast.error("Failed to create alert", {
+        description: "Something went wrong. Please try again.",
+        duration: 4000,
+      });
+    }
+  };
+
+  if (!hasOpenedRef.current) return null;
+
+  return createPortal(
+    <div
+      aria-hidden={!open}
+      style={{ position: "fixed", inset: 0, zIndex: 96, pointerEvents: open ? "auto" : "none" }}
+    >
+      <div
+        style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column",
+          background: "#000000",
+          transform: visible ? "translateX(0)" : "translateX(100%)",
+          transition: `transform ${visible ? DUR_OPEN : DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
+          willChange: "transform",
+          overflow: "hidden",
+        }}
+      >
+        <AppHeader title="Create Price Alert" onBack={onClose} />
+
+        <div style={{
+          flex: 1, overflowY: "auto",
+          overscrollBehavior: "none",
+          padding: "20px 16px",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 32px)",
+        } as React.CSSProperties}>
+          <div className="space-y-4">
+
+            {/* Symbol */}
+            <FieldRow label="Symbol">
+              <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
+            </FieldRow>
+
+            {/* Condition */}
+            <FieldRow label="Condition">
+              <div className="flex gap-2">
+                {(["above", "below", "touch"] as const).map(c => (
+                  <AnimatedButton key={c} onClick={() => setForm(f => ({ ...f, condition: c }))}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",
+                      form.condition === c
+                        ? "bg-primary/20 border-primary/40 text-primary"
+                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                    )}>
+                    {c}
+                  </AnimatedButton>
+                ))}
+              </div>
+            </FieldRow>
+
+            {/* Target Price */}
+            <FieldRow label="Target Price">
+              <Input type="number" placeholder="e.g. 18750" value={form.targetPrice}
+                onChange={e => setForm(f => ({ ...f, targetPrice: e.target.value }))}
+                className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
+            </FieldRow>
+
+            {/* Expiry (optional) */}
+            <UTCDateTimePicker
+              label="Expiry" optional
+              value={form.expiry}
+              onChange={iso => setForm(f => ({ ...f, expiry: iso }))}
+            />
+
+            {/* Notes */}
+            <FieldRow label="Notes">
+              <textarea rows={2} placeholder="Alert notes..." value={form.notes}
+                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50" />
+            </FieldRow>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <AnimatedButton variant="ghost" className="flex-1 h-9 text-muted-foreground hover:text-white" onClick={onClose}>
+                Cancel
+              </AnimatedButton>
+              <AnimatedButton
+                disabled={!canSave}
+                className="flex-1 h-9 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  borderRadius: 999,
+                  background: "#60a5fa",
+                  color: "#fff",
+                  letterSpacing: "0.02em",
+                }}
+                onClick={handleSave}>
+                Create Alert
+              </AnimatedButton>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+});
 
 // ── Zone Alert full-screen screen ────────────────────────────────────────────
 const ZoneAlertScreen = memo(function ZoneAlertScreen({
@@ -1351,13 +1510,13 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         onClose={() => setActiveModal(null)}
         onSave={handleZoneAlertSave}
       />
-      {activeModal === "price" && (
-        <CreatePriceAlertModal
-          initialSymbol={symbol}
-          onClose={() => setActiveModal(null)}
-          onSave={handlePriceAlertSave}
-        />
-      )}
+      {/* Price — full-screen slide-in screen */}
+      <PriceAlertScreen
+        open={activeModal === "price"}
+        symbol={symbol}
+        onClose={() => setActiveModal(null)}
+        onSave={handlePriceAlertSave}
+      />
     </>,
     document.body,
   );
