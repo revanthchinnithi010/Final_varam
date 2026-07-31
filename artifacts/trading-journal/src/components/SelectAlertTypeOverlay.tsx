@@ -616,7 +616,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                         className={cn(
                           "w-full text-left rounded-xl border transition-colors",
                           isSelected
-                            ? "border-primary/40 bg-primary/[0.04]"
+                            ? "border-orange-500/30 bg-orange-500/[0.05]"
                             : "border-white/[0.06] bg-white/[0.02]"
                         )}
                         style={{ padding: "14px 14px" }}
@@ -626,14 +626,11 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                           {/* ── Radio ── */}
                           <div style={{
                             marginTop: 2, width: 18, height: 18, borderRadius: "50%",
-                            border: `2px solid ${isSelected ? "var(--primary, #b7ff5a)" : "rgba(255,255,255,0.22)"}`,
-                            flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                            transition: "border-color 0.15s",
-                          }}>
-                            {isSelected && (
-                              <div style={{ width: 9, height: 9, borderRadius: "50%", background: "var(--primary, #b7ff5a)" }} />
-                            )}
-                          </div>
+                            flexShrink: 0,
+                            border: isSelected ? "none" : "2px solid rgba(255,255,255,0.22)",
+                            background: isSelected ? "#f97316" : "transparent",
+                            transition: "background 0.15s, border-color 0.15s",
+                          }} />
 
                           {/* ── Two-column body ── */}
                           <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 8px" }}>
@@ -645,7 +642,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                                 <span style={{
                                   fontSize: 13, fontWeight: 700, letterSpacing: "0.05em",
                                   textTransform: "uppercase",
-                                  color: isSelected ? "var(--primary, #b7ff5a)" : "rgba(255,255,255,0.85)",
+                                  color: isSelected ? "#f97316" : "rgba(255,255,255,0.85)",
                                 }}>
                                   {d.toolType === "ray" ? "Ray" : "Trendline"}
                                 </span>
