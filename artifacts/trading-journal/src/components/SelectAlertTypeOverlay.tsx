@@ -39,7 +39,7 @@ import {
 } from "@/animations/motion";
 import { useChartStore } from "@/store/chartStore";
 import { SYMBOL_CATALOG, deriveMeta } from "@/store/brokerWatchlistStore";
-import { TrendingUp, TrendingDown, AlertTriangle, ChevronDown } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DUR_OPEN  = 320;
@@ -507,52 +507,42 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
         } as React.CSSProperties}>
           <div className="space-y-4">
 
-            {/* ── SYMBOL CARD ── */}
+            {/* ── SYMBOL DISPLAY ── */}
             {(() => {
-              const meta = deriveMeta(form.symbol);
+              const desc = (SYMBOL_CATALOG[form.symbol]?.description) || deriveMeta(form.symbol).label;
               return (
                 <div style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "12px 14px",
-                  borderRadius: 14,
+                  display: "flex", alignItems: "stretch", gap: 0,
+                  borderRadius: 12,
                   background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.09)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  overflow: "hidden",
                 }}>
-                  {/* Badge */}
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                    background: "rgba(255,255,255,0.07)",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, letterSpacing: "0.03em",
-                      color: "rgba(255,255,255,0.75)", lineHeight: 1,
-                    }}>
-                      {meta.badge.slice(0, 4)}
-                    </span>
-                  </div>
+                  {/* Left orange accent bar */}
+                  <div style={{ width: 3, background: "#f97316", flexShrink: 0, borderRadius: "0 0 0 0" }} />
 
-                  {/* Symbol + description */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ padding: "11px 14px" }}>
                     <p style={{
-                      fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.92)",
-                      letterSpacing: "0.01em", lineHeight: 1.2,
+                      fontSize: 9, fontWeight: 600, letterSpacing: "0.1em",
+                      color: "rgba(255,255,255,0.30)", textTransform: "uppercase",
+                      marginBottom: 4,
+                    }}>
+                      Instrument
+                    </p>
+                    <p style={{
+                      fontSize: 17, fontWeight: 700,
+                      color: "rgba(255,255,255,0.92)",
+                      letterSpacing: "0.01em", lineHeight: 1,
                     }}>
                       {form.symbol}
                     </p>
                     <p style={{
                       fontSize: 11, color: "rgba(255,255,255,0.38)",
-                      marginTop: 2, letterSpacing: "0.01em",
+                      marginTop: 3, letterSpacing: "0.01em",
                     }}>
-                      {(SYMBOL_CATALOG[form.symbol]?.description) || meta.label}
+                      {desc}
                     </p>
                   </div>
-
-                  {/* Chevron — visual affordance (symbol locked to active chart) */}
-                  <ChevronDown
-                    style={{ width: 16, height: 16, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}
-                  />
                 </div>
               );
             })()}
