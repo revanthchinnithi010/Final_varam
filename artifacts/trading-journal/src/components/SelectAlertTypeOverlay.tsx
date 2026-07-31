@@ -39,7 +39,7 @@ import {
 } from "@/animations/motion";
 import { useChartStore } from "@/store/chartStore";
 import { SYMBOL_CATALOG, deriveMeta } from "@/store/brokerWatchlistStore";
-import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -436,6 +436,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
   }, [open, allDrawings.length, normalSymbol, normalTf]);
 
   const [selectedDrawingId, setSelectedDrawingId] = useState<number | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
 
   // Clear selection each time the screen opens
   useEffect(() => {
@@ -758,67 +759,101 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
               </div>
             </FieldRow>
 
-            {/* ── OR ENTER MANUALLY divider ── */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-white/[0.06]" />
-              <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">or enter manually</span>
-              <div className="flex-1 h-px bg-white/[0.06]" />
-            </div>
-
-            {/* Slope indicator */}
-            {slope && (
-              <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={tweenFast}
-                className="p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3">
-                {slope === "ascending"
-                  ? <TrendingUp className="w-5 h-5 text-primary flex-shrink-0" />
-                  : <TrendingDown className="w-5 h-5 text-primary flex-shrink-0" />}
-                <div>
-                  <p className="text-xs font-semibold text-primary capitalize">{slope} Trendline</p>
-                  <p className="text-[10px] text-primary/60">
-                    Slope: {(parseFloat(form.p2Price) - parseFloat(form.p1Price)).toFixed(2)} pts
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Point 1 */}
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 space-y-3">
-              <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Point 1 — Anchor</p>
-              <FieldRow label="Price">
-                <Input type="number" placeholder="e.g. 18500" value={form.p1Price}
-                  onChange={e => setForm(f => ({ ...f, p1Price: e.target.value }))}
-                  className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
-              </FieldRow>
-              <UTCDateTimePicker label="Time (UTC)" value={form.p1Time}
-                onChange={iso => setForm(f => ({ ...f, p1Time: iso }))} />
-            </div>
-
-            {/* Point 2 */}
-            <div className={cn(
-              "rounded-xl border p-3 space-y-3 transition-colors",
-              timeInvalid ? "border-amber-500/30 bg-amber-500/[0.04]" : "border-white/[0.06] bg-white/[0.02]"
-            )}>
-              <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Point 2 — Direction</p>
-              <FieldRow label="Price">
-                <Input type="number" placeholder="e.g. 18750" value={form.p2Price}
-                  onChange={e => setForm(f => ({ ...f, p2Price: e.target.value }))}
-                  className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
-              </FieldRow>
-              <UTCDateTimePicker label="Time (UTC)" value={form.p2Time}
-                onChange={iso => setForm(f => ({ ...f, p2Time: iso }))} />
-            </div>
-
-            {/* Time validation warning */}
-            <AnimatePresence>
-              {timeInvalid && (
+            {/* ── OR ENTER MANUALLY collapsible ── */}
+            <div>
+              {/* Header / toggle */}
+              <button
+                type="button"
+                onClick={() => setManualOpen(o => !o)}
+                className="flex items-center gap-3 w-full"
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <div className="flex-1 h-px bg-white/[0.06]" />
+                <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider select-none">
+                  or enter manually
+                </span>
                 <motion.div
-                  initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={tweenFast}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/25">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                  <p className="text-[11px] text-amber-400">Point 2 time must be after Point 1</p>
+                  animate={{ rotate: manualOpen ? 180 : 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                >
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40" />
                 </motion.div>
-              )}
-            </AnimatePresence>
+                <div className="flex-1 h-px bg-white/[0.06]" />
+              </button>
+
+              {/* Collapsible content */}
+              <AnimatePresence initial={false}>
+                {manualOpen && (
+                  <motion.div
+                    key="manual-body"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.27, ease: "easeInOut" }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <div className="space-y-4 pt-4">
+
+                      {/* Slope indicator */}
+                      {slope && (
+                        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={tweenFast}
+                          className="p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3">
+                          {slope === "ascending"
+                            ? <TrendingUp className="w-5 h-5 text-primary flex-shrink-0" />
+                            : <TrendingDown className="w-5 h-5 text-primary flex-shrink-0" />}
+                          <div>
+                            <p className="text-xs font-semibold text-primary capitalize">{slope} Trendline</p>
+                            <p className="text-[10px] text-primary/60">
+                              Slope: {(parseFloat(form.p2Price) - parseFloat(form.p1Price)).toFixed(2)} pts
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Point 1 */}
+                      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 space-y-3">
+                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Point 1 — Anchor</p>
+                        <FieldRow label="Price">
+                          <Input type="number" placeholder="e.g. 18500" value={form.p1Price}
+                            onChange={e => setForm(f => ({ ...f, p1Price: e.target.value }))}
+                            className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
+                        </FieldRow>
+                        <UTCDateTimePicker label="Time (UTC)" value={form.p1Time}
+                          onChange={iso => setForm(f => ({ ...f, p1Time: iso }))} />
+                      </div>
+
+                      {/* Point 2 */}
+                      <div className={cn(
+                        "rounded-xl border p-3 space-y-3 transition-colors",
+                        timeInvalid ? "border-amber-500/30 bg-amber-500/[0.04]" : "border-white/[0.06] bg-white/[0.02]"
+                      )}>
+                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Point 2 — Direction</p>
+                        <FieldRow label="Price">
+                          <Input type="number" placeholder="e.g. 18750" value={form.p2Price}
+                            onChange={e => setForm(f => ({ ...f, p2Price: e.target.value }))}
+                            className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
+                        </FieldRow>
+                        <UTCDateTimePicker label="Time (UTC)" value={form.p2Time}
+                          onChange={iso => setForm(f => ({ ...f, p2Time: iso }))} />
+                      </div>
+
+                      {/* Time validation warning */}
+                      <AnimatePresence>
+                        {timeInvalid && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={tweenFast}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/25">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                            <p className="text-[11px] text-amber-400">Point 2 time must be after Point 1</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Actions */}
             <div className="flex gap-2 pt-1">
