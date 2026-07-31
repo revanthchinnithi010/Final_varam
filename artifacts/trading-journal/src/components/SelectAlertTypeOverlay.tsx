@@ -726,9 +726,19 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
 
             {/* Notes */}
             <FieldRow label="Notes">
-              <textarea rows={2} placeholder="Trendline notes..." value={form.notes}
-                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50" />
+              <textarea
+                rows={2}
+                placeholder="Trendline notes..."
+                value={form.notes}
+                onChange={e => {
+                  setForm(f => ({ ...f, notes: e.target.value }));
+                  const el = e.target;
+                  el.style.height = "auto";
+                  el.style.height = `${el.scrollHeight}px`;
+                }}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50"
+                style={{ overflow: "hidden", minHeight: "64px" }}
+              />
             </FieldRow>
 
             {/* ── OR ENTER MANUALLY divider ── */}
