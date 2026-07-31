@@ -724,6 +724,13 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
               )}
             </div>
 
+            {/* Notes */}
+            <FieldRow label="Notes">
+              <textarea rows={2} placeholder="Trendline notes..." value={form.notes}
+                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50" />
+            </FieldRow>
+
             {/* ── OR ENTER MANUALLY divider ── */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-white/[0.06]" />
@@ -801,13 +808,6 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                   </AnimatedButton>
                 ))}
               </div>
-            </FieldRow>
-
-            {/* Notes */}
-            <FieldRow label="Notes">
-              <textarea rows={2} placeholder="Trendline notes..." value={form.notes}
-                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50" />
             </FieldRow>
 
             {/* Actions */}
