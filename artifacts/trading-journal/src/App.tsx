@@ -6,6 +6,7 @@ import { popupManager } from "@/lib/popupManager";
 import { Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { LiveMarketProvider } from "@/contexts/LiveMarketContext";
@@ -769,6 +770,13 @@ function App() {
                 <Router />
               </WouterRouter>
               <Toaster />
+              <SonnerToaster
+                position="top-center"
+                theme="dark"
+                toastOptions={{
+                  style: { background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.10)", color: "#fff" },
+                }}
+              />
             </TooltipProvider>
           </WatchlistProvider>
         </NotificationsProvider>
