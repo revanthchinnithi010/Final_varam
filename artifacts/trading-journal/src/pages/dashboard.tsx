@@ -681,10 +681,10 @@ const CalendarHeatmap = memo(function CalendarHeatmap({
         }`}
         style={cellStyles[dateStr]}
       >
-        <span className="text-[10px] font-semibold leading-none text-foreground/90">{d}</span>
+        <span className="text-[10px] font-semibold leading-none text-white/90">{d}</span>
         {entry && entry.trades > 0 && (
-          <span className={`text-[8px] font-bold leading-none mt-0.5 ${entry.pnl > 0 ? "text-emerald-400" : "text-red-400"}`}>
-            {entry.pnl > 0 ? "+" : ""}{axisFormatter(Math.abs(entry.pnl))}
+          <span className="text-[9px] font-bold leading-none mt-0.5 text-white/90">
+            {entry.pnl > 0 ? "+" : entry.pnl < 0 ? "-" : ""}{axisFormatter(Math.abs(entry.pnl))}
           </span>
         )}
       </div>
