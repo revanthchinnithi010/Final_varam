@@ -440,10 +440,14 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
   const [selectedDrawingId, setSelectedDrawingId] = useState<number | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
 
-  // Clear selection each time the screen opens
+  // Clear selection each time the screen opens; auto-open manual entry when
+  // there are no matching drawings so the user can always fill in prices.
   useEffect(() => {
-    if (open) setSelectedDrawingId(null);
-  }, [open]);
+    if (open) {
+      setSelectedDrawingId(null);
+      setManualOpen(relevantDrawings.length === 0);
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-populate form whenever the selected drawing (or its coords) changes
   useEffect(() => {
@@ -463,7 +467,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
     }));
   }, [selectedDrawingId, allDrawings]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const timeInvalid = !!(form.p1Time && form.p2Time && new Date(form.p2Time) <= new Date(form.p1Time));
+  const timeInvalid = !!(form.p1Time && form.p2Time && new Date(form.p2Time) < new Date(form.p1Time));
   const canSave = !!(form.p1Price && form.p2Price && form.p1Time && form.p2Time && !timeInvalid);
 
   const handleSave = () => {

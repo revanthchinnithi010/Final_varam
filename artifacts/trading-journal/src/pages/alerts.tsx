@@ -426,7 +426,7 @@ export const CreateTrendlineAlertModal = memo(function CreateTrendlineAlertModal
     condition: "touch" as TrendlineAlert["condition"], notes: "",
   });
 
-  const timeInvalid = !!(form.p1Time && form.p2Time && new Date(form.p2Time) <= new Date(form.p1Time));
+  const timeInvalid = !!(form.p1Time && form.p2Time && new Date(form.p2Time) < new Date(form.p1Time));
   const canSave = !!(form.p1Price && form.p2Price && form.p1Time && form.p2Time && !timeInvalid);
 
   const handleSave = () => {
