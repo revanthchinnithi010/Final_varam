@@ -20,7 +20,6 @@ import { useDrawingStore } from "@/store/drawingStore";
 import type { Drawing } from "@/types/drawing";
 import {
   CreatePriceAlertModal,
-  CreateZoneAlertModal,
   FieldRow,
   AlertSelect,
   UTCDateTimePicker,
@@ -339,6 +338,207 @@ function fmtUtcTime(sec: number): string {
     hour: "2-digit", minute: "2-digit", timeZone: "UTC",
   }) + " UTC";
 }
+
+// ── Zone Alert full-screen screen ────────────────────────────────────────────
+const ZoneAlertScreen = memo(function ZoneAlertScreen({
+  open, symbol, onClose, onSave,
+}: {
+  open: boolean;
+  symbol: string;
+  onClose: () => void;
+  onSave: (a: ZoneAlert) => void;
+}) {
+  const [visible, setVisible] = useState(false);
+  const hasOpenedRef = useRef(false);
+  if (open) hasOpenedRef.current = true;
+
+  useEffect(() => {
+    if (open) {
+      let raf: number;
+      const t = setTimeout(() => { raf = requestAnimationFrame(() => setVisible(true)); }, 0);
+      return () => { clearTimeout(t); cancelAnimationFrame(raf); };
+    }
+    setVisible(false);
+    return undefined;
+  }, [open]);
+
+  const chartInterval = useChartStore(s => s.interval);
+  const chartHumanTf  = intervalToHumanTf(chartInterval);
+
+  const [form, setForm] = useState({
+    symbol: symbol ?? "NAS100", zoneType: "supply" as ZoneAlert["zoneType"],
+    upperPrice: "", lowerPrice: "", timeframe: chartHumanTf,
+    condition: "touch" as ZoneAlert["condition"], notes: "",
+  });
+
+  // Sync symbol and timeframe each time the screen opens.
+  useEffect(() => {
+    if (open) {
+      setForm(f => ({
+        ...f,
+        symbol:    symbol ?? "",
+        timeframe: intervalToHumanTf(useChartStore.getState().interval),
+      }));
+    }
+  }, [open, symbol]);
+
+  // Keep timeframe in sync if the user changes chart interval while open.
+  useEffect(() => {
+    if (open) setForm(f => ({ ...f, timeframe: chartHumanTf }));
+  }, [chartHumanTf, open]);
+
+  const canSave = !!(form.upperPrice && form.lowerPrice);
+
+  const handleSave = () => {
+    if (!canSave) return;
+    try {
+      onSave({
+        id: `za${Date.now()}`, type: "zone",
+        symbol: form.symbol, zoneType: form.zoneType,
+        upperPrice: parseFloat(form.upperPrice), lowerPrice: parseFloat(form.lowerPrice),
+        timeframe: form.timeframe, condition: form.condition,
+        notes: form.notes, status: "active",
+        createdAt: new Date().toISOString(), triggeredAt: null,
+      });
+      toast.success("Zone Alert Created Successfully", {
+        description: `${form.symbol} · ${form.timeframe} · ${form.condition}`,
+        duration: 3000,
+      });
+      onClose();
+    } catch {
+      toast.error("Failed to create alert", {
+        description: "Something went wrong. Please try again.",
+        duration: 4000,
+      });
+    }
+  };
+
+  const zoneTypes = [
+    { value: "supply",             label: "Supply" },
+    { value: "demand",             label: "Demand" },
+    { value: "support_resistance", label: "S/R" },
+    { value: "order_block",        label: "Order Block" },
+  ] as const;
+
+  if (!hasOpenedRef.current) return null;
+
+  return createPortal(
+    <div
+      aria-hidden={!open}
+      style={{ position: "fixed", inset: 0, zIndex: 96, pointerEvents: open ? "auto" : "none" }}
+    >
+      <div
+        style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column",
+          background: "#000000",
+          transform: visible ? "translateX(0)" : "translateX(100%)",
+          transition: `transform ${visible ? DUR_OPEN : DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
+          willChange: "transform",
+          overflow: "hidden",
+        }}
+      >
+        <AppHeader title="Create Zone Alert" onBack={onClose} />
+
+        <div style={{
+          flex: 1, overflowY: "auto",
+          overscrollBehavior: "none",
+          padding: "20px 16px",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 32px)",
+        } as React.CSSProperties}>
+          <div className="space-y-4">
+
+            {/* Symbol + Timeframe */}
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Symbol">
+                <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
+              </FieldRow>
+              <FieldRow label="Timeframe">
+                <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
+              </FieldRow>
+            </div>
+
+            {/* Zone Type */}
+            <FieldRow label="Zone Type">
+              <div className="grid grid-cols-2 gap-2">
+                {zoneTypes.map(z => (
+                  <AnimatedButton key={z.value} onClick={() => setForm(f => ({ ...f, zoneType: z.value }))}
+                    className={cn(
+                      "py-2 rounded-lg text-xs font-semibold border transition-all",
+                      form.zoneType === z.value
+                        ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
+                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                    )}>
+                    {z.label}
+                  </AnimatedButton>
+                ))}
+              </div>
+            </FieldRow>
+
+            {/* Upper / Lower Price */}
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Upper Price">
+                <Input type="number" placeholder="Upper" value={form.upperPrice}
+                  onChange={e => setForm(f => ({ ...f, upperPrice: e.target.value }))}
+                  className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
+              </FieldRow>
+              <FieldRow label="Lower Price">
+                <Input type="number" placeholder="Lower" value={form.lowerPrice}
+                  onChange={e => setForm(f => ({ ...f, lowerPrice: e.target.value }))}
+                  className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
+              </FieldRow>
+            </div>
+
+            {/* Alert Condition */}
+            <FieldRow label="Alert Condition">
+              <div className="flex gap-2">
+                {(["touch", "break", "retest"] as const).map(c => (
+                  <AnimatedButton key={c} onClick={() => setForm(f => ({ ...f, condition: c }))}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",
+                      form.condition === c
+                        ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
+                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                    )}>
+                    {c}
+                  </AnimatedButton>
+                ))}
+              </div>
+            </FieldRow>
+
+            {/* Notes */}
+            <FieldRow label="Notes">
+              <textarea rows={2} placeholder="Zone notes..." value={form.notes}
+                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50" />
+            </FieldRow>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <AnimatedButton variant="ghost" className="flex-1 h-9 text-muted-foreground hover:text-white" onClick={onClose}>
+                Cancel
+              </AnimatedButton>
+              <AnimatedButton
+                disabled={!canSave}
+                className="flex-1 h-9 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  borderRadius: 999,
+                  background: "#fb923c",
+                  color: "#fff",
+                  letterSpacing: "0.02em",
+                }}
+                onClick={handleSave}>
+                Create Zone Alert
+              </AnimatedButton>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+});
 
 // ── Trendline Alert full-screen screen ───────────────────────────────────────
 const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
@@ -1143,13 +1343,14 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         onClose={() => setActiveModal(null)}
         onSave={handleTrendlineAlertSave}
       />
-      {activeModal === "zone" && (
-        <CreateZoneAlertModal
-          initialSymbol={symbol}
-          onClose={() => setActiveModal(null)}
-          onSave={handleZoneAlertSave}
-        />
-      )}
+
+      {/* Zone — full-screen slide-in screen */}
+      <ZoneAlertScreen
+        open={activeModal === "zone"}
+        symbol={symbol}
+        onClose={() => setActiveModal(null)}
+        onSave={handleZoneAlertSave}
+      />
       {activeModal === "price" && (
         <CreatePriceAlertModal
           initialSymbol={symbol}
