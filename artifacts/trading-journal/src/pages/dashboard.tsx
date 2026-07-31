@@ -76,25 +76,14 @@ const DashboardAlertsOverlay = memo(function DashboardAlertsOverlay() {
       aria-hidden={!open}
       style={{ position: "fixed", inset: 0, zIndex: 90, pointerEvents: open ? "auto" : "none" }}
     >
-      {/* Backdrop */}
-      <div
-        onClick={() => setOpenRef.current(false)}
-        style={{
-          position: "absolute", inset: 0,
-          background: "rgba(0,0,0,0.45)",
-          opacity: visible ? 1 : 0,
-          transition: `opacity ${visible ? DUR_OPEN : DUR_CLOSE}ms ${visible ? EASE_OPEN : EASE_CLOSE}`,
-        }}
-      />
-
-      {/* Full-screen panel — slides up from bottom */}
+      {/* Full-screen panel — slides in from right */}
       <div
         className="transform-gpu"
         style={{
           position: "absolute", inset: 0,
           display: "flex", flexDirection: "column",
           background: "#000000",
-          transform: visible ? "translateY(0)" : "translateY(100%)",
+          transform: visible ? "translateX(0)" : "translateX(100%)",
           transition: `transform ${visible ? DUR_OPEN : DUR_CLOSE}ms ${visible ? EASE_OPEN : EASE_CLOSE}`,
           willChange: "transform",
           overflow: "hidden",
