@@ -22,7 +22,15 @@ const routes: Route[] = [
   { test: (m, p) => m === "GET" && p === "/api/stats/summary",          body: () => MOCK_STATS_SUMMARY },
   { test: (m, p) => m === "GET" && p === "/api/stats/equity-curve",     body: () => MOCK_EQUITY_CURVE },
   { test: (m, p) => m === "GET" && p === "/api/stats/weekly-pnl",       body: () => MOCK_WEEKLY_PNL },
-  { test: (m, p) => m === "GET" && p === "/api/stats/calendar-heatmap", body: () => MOCK_CALENDAR_DAYS },
+  { test: (m, p) => m === "GET" && p === "/api/stats/calendar-heatmap", body: (search) => {
+      const year  = search.get("year")  ? Number(search.get("year"))  : null;
+      const month = search.get("month") ? Number(search.get("month")) : null;
+      return MOCK_CALENDAR_DAYS.filter(d => {
+        if (year  && Number(d.date.slice(0, 4))  !== year)  return false;
+        if (month && Number(d.date.slice(5, 7))  !== month) return false;
+        return true;
+      });
+    } },
   { test: (m, p) => m === "GET" && p === "/api/stats/symbol-breakdown", body: () => MOCK_SYMBOL_STATS },
 
   { test: (m, p) => m === "GET" && p === "/api/trades", body: (search) => {
