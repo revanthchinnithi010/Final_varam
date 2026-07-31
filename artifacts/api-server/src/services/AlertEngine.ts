@@ -3,6 +3,8 @@ import { and, eq } from "drizzle-orm";
 import type { MarketDataService, LatestTick } from "./MarketDataService.js";
 import type { TelegramService } from "./TelegramService.js";
 import type { WSManager } from "../ws/WSManager.js";
+import type { CandleAggregator } from "./CandleAggregator.js";
+import { AtrCalculator } from "./AtrCalculator.js";
 import { logger } from "../lib/logger.js";
 
 const COOLDOWN_MS = 120_000;
@@ -47,6 +49,8 @@ interface TrendlineRow {
   notes: string | null;
   telegramEnabled: boolean;
   cooldownUntil: Date | null;
+  atrPeriod: number;
+  atrMultiplier: number;
 }
 
 export class AlertEngine {
@@ -66,11 +70,18 @@ export class AlertEngine {
   // In-memory dedup: prevent same alert firing twice within 10 s
   private recentlyFired: Map<number, number> = new Map();
 
+  // ATR proximity: tracks whether price is currently inside the zone per trendline
+  private atrProximityInZone: Map<number, boolean> = new Map();
+  private atrCalculator: AtrCalculator;
+
   constructor(
     private marketData: MarketDataService,
     private telegram: TelegramService,
     private wsManager: WSManager,
-  ) {}
+    candleAggregator: CandleAggregator,
+  ) {
+    this.atrCalculator = new AtrCalculator(candleAggregator);
+  }
 
   async start(): Promise<void> {
     await this.loadAlerts();
@@ -156,8 +167,13 @@ export class AlertEngine {
         .where(eq(trendlinesTable.isActive, true));
 
       this.activeTrendlines.clear();
+      // Prune proximity state for trendlines no longer active
+      const incomingIds = new Set(trendlineRows.map(r => r.id));
+      for (const id of this.atrProximityInZone.keys()) {
+        if (!incomingIds.has(id)) this.atrProximityInZone.delete(id);
+      }
       for (const t of trendlineRows) {
-        if (t.isTriggered) continue;                                  // never re-fire already triggered alerts
+        if (t.isTriggered && t.condition !== "atr_proximity") continue; // atr_proximity is never permanently triggered
         if (t.cooldownUntil && t.cooldownUntil > now) continue;
         if ((t.alertStatus ?? "active") === "paused") continue;
         this.activeTrendlines.set(t.id, {
@@ -174,6 +190,8 @@ export class AlertEngine {
           notes: t.notes ?? null,
           telegramEnabled: t.telegramEnabled,
           cooldownUntil: t.cooldownUntil,
+          atrPeriod:    t.atrPeriod ?? 14,
+          atrMultiplier: t.atrMultiplier ?? 0.15,
         });
       }
 
@@ -335,12 +353,36 @@ export class AlertEngine {
         shouldFire = currentSide !== lastSide;
       } else if (cond === "rejection") {
         shouldFire = currentSide !== lastSide;
+
+      } else if (cond === "atr_proximity") {
+        // ATR-Based Proximity: fire once on zone entry, reset when price exits
+        const atr = this.atrCalculator.getAtr(tl.symbol, tl.timeframe, tl.atrPeriod);
+        if (atr !== null) {
+          const buffer    = atr * tl.atrMultiplier;
+          const lowerZone = projected - buffer;
+          const upperZone = projected + buffer;
+          const inZone    = price >= lowerZone && price <= upperZone;
+          const wasInZone = this.atrProximityInZone.get(id) ?? false;
+
+          if (inZone && !wasInZone) {
+            // Entered the zone — fire once
+            this.atrProximityInZone.set(id, true);
+            shouldFire = true;
+          } else if (!inZone && wasInZone) {
+            // Exited the zone — reset so the next entry fires again
+            this.atrProximityInZone.set(id, false);
+          }
+        }
       }
 
       if (shouldFire) {
         // Clear touch count on fire so it resets for next cooldown cycle
         this.touchCounts.delete(id);
-        await this.fireDrawingAlert(tl, tick.price, projected, currentSide);
+        if (cond === "atr_proximity") {
+          await this.fireAtrProximityAlert(tl, tick.price, projected);
+        } else {
+          await this.fireDrawingAlert(tl, tick.price, projected, currentSide);
+        }
       }
     }
   }
@@ -531,13 +573,74 @@ export class AlertEngine {
     }
   }
 
+  /** Fires a one-shot proximity notification without permanently triggering the alert. */
+  private async fireAtrProximityAlert(
+    tl: TrendlineRow,
+    triggeredPrice: number,
+    projectedPrice: number,
+  ): Promise<void> {
+    // In-memory dedup: prevent same alert firing twice within 10 s
+    const lastFired = this.recentlyFired.get(tl.id);
+    if (lastFired && Date.now() - lastFired < 10_000) return;
+    this.recentlyFired.set(tl.id, Date.now());
+
+    logger.info(
+      { trendlineId: tl.id, symbol: tl.symbol, triggeredPrice, projectedPrice },
+      "AlertEngine: ATR proximity alert fired",
+    );
+
+    try {
+      await db.insert(alertEventsTable).values({
+        alertId:       tl.id,
+        alertType:     "trendline",
+        symbol:        tl.symbol,
+        condition:     tl.condition,
+        priceAtTrigger: triggeredPrice,
+        message: `Price entered ATR proximity zone around trendline (projected: ${projectedPrice.toFixed(5)})`,
+      });
+
+      this.wsManager.broadcast({
+        type:           "alert_triggered",
+        alertType:      "trendline",
+        drawingType:    tl.drawingType,
+        alertId:        tl.id,
+        symbol:         tl.symbol,
+        timeframe:      tl.timeframe,
+        condition:      tl.condition,
+        conditionLabel: "ATR-Based Proximity",
+        triggeredPrice,
+        projectedPrice,
+        title:          "Approaching Trendline",
+        message:        "Price has entered the ATR proximity zone for your selected trendline.",
+        triggeredAt:    new Date().toISOString(),
+      });
+
+      if (tl.telegramEnabled) {
+        await this.telegram.sendDrawingAlert({
+          symbol:         tl.symbol,
+          timeframe:      tl.timeframe,
+          drawingType:    tl.drawingType,
+          condition:      tl.condition,
+          conditionLabel: "ATR-Based Proximity",
+          triggeredPrice,
+          projectedPrice,
+          direction:      "proximity",
+          notes:          tl.notes,
+        });
+      }
+    } catch (err) {
+      logger.error({ err, trendlineId: tl.id }, "AlertEngine: failed to fire ATR proximity alert");
+    }
+  }
+
   private humanCondition(condition: string, side: TrendlineSide): string {
     const map: Record<string, string> = {
-      cross_above: "Cross Above",
-      cross_below: "Cross Below",
-      breakout:    side === "above" ? "Breakout Above" : "Breakout Below",
-      break:       side === "above" ? "Break Above" : "Break Below",
-      touch:       "Touch",
+      cross_above:   "Cross Above",
+      cross_below:   "Cross Below",
+      breakout:      side === "above" ? "Breakout Above" : "Breakout Below",
+      break:         side === "above" ? "Break Above" : "Break Below",
+      touch:         "Touch",
+      atr_proximity: "ATR-Based Proximity",
       touch_price: "Touch Price",
       above_price: "Above Price",
       below_price: "Below Price",

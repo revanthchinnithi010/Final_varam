@@ -41,7 +41,11 @@ export interface TrendlineAlert {
   point1Time: string;
   point2Price: number;
   point2Time: string;
-  condition: "touch" | "break" | "retest";
+  condition: "touch" | "break" | "retest" | "atr_proximity";
+  /** ATR period used for proximity zone calculation (default 14) */
+  atrPeriod?: number;
+  /** ATR multiplier for zone buffer size (default 0.15) */
+  atrMultiplier?: number;
   notes: string;
   status: AlertStatus;
   createdAt: string;

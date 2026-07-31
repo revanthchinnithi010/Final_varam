@@ -7,7 +7,7 @@ import type { AlertEngine } from "../services/AlertEngine.js";
 const SUPPORTED_SYMBOLS = ["NAS100","US30","XAUUSD","EURUSD","GBPJPY","USOIL","UKOIL","BTCUSD","ETHUSD","SOLUSD","DOGEUSD","PEPEUSD"];
 
 const DRAWING_TYPES = ["trendline","ray","horizontal_line","rectangle","channel"] as const;
-const TRENDLINE_CONDITIONS = ["touch","break","retest","cross_above","cross_below","breakout"] as const;
+const TRENDLINE_CONDITIONS = ["touch","break","retest","cross_above","cross_below","breakout","atr_proximity"] as const;
 const ZONE_CONDITIONS = ["enter_zone","exit_zone","breakout","rejection"] as const;
 const PRICE_CONDITIONS = ["above_price","below_price","touch_price"] as const;
 const ALL_CONDITIONS = [...TRENDLINE_CONDITIONS, ...ZONE_CONDITIONS, ...PRICE_CONDITIONS] as const;
@@ -23,6 +23,8 @@ const CreateTrendlineBody = z.object({
   drawingType:     z.enum(DRAWING_TYPES).default("trendline"),
   notes:           z.string().max(500).optional(),
   telegramEnabled: z.boolean().optional().default(true),
+  atrPeriod:       z.number().int().min(5).max(50).optional().default(14),
+  atrMultiplier:   z.number().min(0.05).max(1.0).optional().default(0.15),
 });
 
 const UpdateTrendlineBody = z.object({
@@ -35,6 +37,8 @@ const UpdateTrendlineBody = z.object({
   point1Time:      z.string().datetime().optional(),
   point2Price:     z.number().positive().optional(),
   point2Time:      z.string().datetime().optional(),
+  atrPeriod:       z.number().int().min(5).max(50).optional(),
+  atrMultiplier:   z.number().min(0.05).max(1.0).optional(),
 });
 
 const IdParam = z.object({ id: z.coerce.number().int().positive() });
@@ -87,6 +91,8 @@ export function createTrendlinesRouter(alertEngine: AlertEngine): IRouter {
         telegramEnabled: d.telegramEnabled,
         isActive:        true,
         isTriggered:     false,
+        atrPeriod:       d.atrPeriod ?? 14,
+        atrMultiplier:   d.atrMultiplier ?? 0.15,
       }).returning();
 
       await alertEngine.reloadAlerts();
@@ -125,6 +131,8 @@ export function createTrendlinesRouter(alertEngine: AlertEngine): IRouter {
       if (d.point1Time !== undefined) updates.point1Time = new Date(d.point1Time);
       if (d.point2Price !== undefined) updates.point2Price = d.point2Price;
       if (d.point2Time !== undefined) updates.point2Time = new Date(d.point2Time);
+      if (d.atrPeriod !== undefined) updates.atrPeriod = d.atrPeriod;
+      if (d.atrMultiplier !== undefined) updates.atrMultiplier = d.atrMultiplier;
 
       const [row] = await db.update(trendlinesTable).set(updates).where(eq(trendlinesTable.id, params.data.id)).returning();
       if (!row) { res.status(404).json({ error: "Drawing alert not found" }); return; }
@@ -174,6 +182,8 @@ export function createTrendlinesRouter(alertEngine: AlertEngine): IRouter {
         telegramEnabled: original.telegramEnabled,
         isActive:        true,
         isTriggered:     false,
+        atrPeriod:       original.atrPeriod,
+        atrMultiplier:   original.atrMultiplier,
       }).returning();
 
       await alertEngine.reloadAlerts();

@@ -223,6 +223,10 @@ const MIGRATIONS = [
     provider   TEXT NOT NULL DEFAULT '',
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+
+  // ATR-Based Proximity alert fields
+  `ALTER TABLE trendlines ADD COLUMN IF NOT EXISTS atr_period INTEGER NOT NULL DEFAULT 14`,
+  `ALTER TABLE trendlines ADD COLUMN IF NOT EXISTS atr_multiplier REAL NOT NULL DEFAULT 0.15`,
 ];
 
 export async function runMigrations(): Promise<void> {

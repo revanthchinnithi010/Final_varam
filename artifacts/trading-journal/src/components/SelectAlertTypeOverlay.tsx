@@ -370,12 +370,14 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
   const chartHumanTf  = intervalToHumanTf(chartInterval);
 
   const [form, setForm] = useState({
-    symbol:    symbol ?? "",
-    timeframe: chartHumanTf,
+    symbol:       symbol ?? "",
+    timeframe:    chartHumanTf,
     p1Price: "", p1Time: "",
     p2Price: "", p2Time: "",
-    condition: "touch" as TrendlineAlert["condition"],
-    notes: "",
+    condition:    "touch" as TrendlineAlert["condition"],
+    notes:        "",
+    atrPeriod:    14,
+    atrMultiplier: 0.15,
   });
 
   // Sync symbol AND timeframe every time the screen opens so it always reflects
@@ -473,10 +475,36 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
         point1Price: parseFloat(form.p1Price), point1Time: form.p1Time,
         point2Price: parseFloat(form.p2Price), point2Time: form.p2Time,
         condition: form.condition, notes: form.notes,
+        atrPeriod: form.atrPeriod, atrMultiplier: form.atrMultiplier,
         status: "active", createdAt: new Date().toISOString(), triggeredAt: null,
       });
+      // ATR proximity alerts also need backend evaluation — persist to API
+      if (form.condition === "atr_proximity") {
+        fetch("/api/trendlines", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            symbol:        form.symbol,
+            timeframe:     form.timeframe,
+            point1Price:   parseFloat(form.p1Price),
+            point1Time:    form.p1Time,
+            point2Price:   parseFloat(form.p2Price),
+            point2Time:    form.p2Time,
+            condition:     "atr_proximity",
+            drawingType:   "trendline",
+            notes:         form.notes || undefined,
+            atrPeriod:     form.atrPeriod,
+            atrMultiplier: form.atrMultiplier,
+          }),
+        }).catch(err => console.warn("ATR proximity alert: API save failed", err));
+      }
+      const condLabel =
+        form.condition === "atr_proximity" ? "ATR Proximity" :
+        form.condition === "touch"         ? "Exact Touch"   :
+        form.condition === "break"         ? "Trendline Break" :
+        form.condition;
       toast.success("Trendline alert created", {
-        description: `${form.symbol} · ${form.timeframe} · ${form.condition}`,
+        description: `${form.symbol} · ${form.timeframe} · ${condLabel}`,
         duration: 3000,
       });
       onClose();
@@ -744,18 +772,97 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
 
             {/* Condition */}
             <FieldRow label="Alert Condition">
-              <div className="flex gap-2">
-                {(["touch", "break", "retest"] as const).map(c => (
-                  <AnimatedButton key={c} onClick={() => setForm(f => ({ ...f, condition: c }))}
-                    className={cn(
-                      "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",
-                      form.condition === c
-                        ? "bg-primary/20 border-primary/40 text-primary"
-                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
-                    )}>
-                    {c}
-                  </AnimatedButton>
-                ))}
+              <div className="space-y-3">
+                {/* Three condition pills */}
+                <div className="flex gap-2">
+                  {([
+                    { value: "touch",         label: "Exact Touch" },
+                    { value: "atr_proximity", label: "ATR Proximity" },
+                    { value: "break",         label: "Trendline Break" },
+                  ] as const).map(({ value, label }) => (
+                    <AnimatedButton
+                      key={value}
+                      onClick={() => setForm(f => ({ ...f, condition: value }))}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-xs font-semibold border transition-all",
+                        form.condition === value
+                          ? "bg-primary/20 border-primary/40 text-primary"
+                          : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                      )}>
+                      {label}
+                    </AnimatedButton>
+                  ))}
+                </div>
+
+                {/* ATR settings — only shown when ATR Proximity is selected */}
+                <AnimatePresence initial={false}>
+                  {form.condition === "atr_proximity" && (
+                    <motion.div
+                      key="atr-settings"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.22, ease: "easeInOut" }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      <div
+                        className="mt-1 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-3"
+                      >
+                        {/* Helper text */}
+                        <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+                          Alert triggers when price enters an ATR-based proximity zone around the selected trendline.
+                        </p>
+
+                        {/* ATR Period + Multiplier row */}
+                        <div className="flex gap-3">
+                          {/* ATR Period */}
+                          <div className="flex-1 space-y-1.5">
+                            <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+                              ATR Period
+                            </p>
+                            <div className="flex items-center rounded-lg border border-white/[0.08] bg-white/[0.04] overflow-hidden h-9">
+                              <button
+                                type="button"
+                                className="px-2.5 h-full text-muted-foreground hover:text-white transition-colors text-sm"
+                                onClick={() => setForm(f => ({ ...f, atrPeriod: Math.max(5, f.atrPeriod - 1) }))}
+                              >−</button>
+                              <span className="flex-1 text-center text-xs font-mono font-semibold text-white tabular-nums">
+                                {form.atrPeriod}
+                              </span>
+                              <button
+                                type="button"
+                                className="px-2.5 h-full text-muted-foreground hover:text-white transition-colors text-sm"
+                                onClick={() => setForm(f => ({ ...f, atrPeriod: Math.min(50, f.atrPeriod + 1) }))}
+                              >+</button>
+                            </div>
+                          </div>
+
+                          {/* ATR Multiplier */}
+                          <div className="flex-1 space-y-1.5">
+                            <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+                              ATR Multiplier
+                            </p>
+                            <div className="flex items-center rounded-lg border border-white/[0.08] bg-white/[0.04] overflow-hidden h-9">
+                              <button
+                                type="button"
+                                className="px-2.5 h-full text-muted-foreground hover:text-white transition-colors text-sm"
+                                onClick={() => setForm(f => ({ ...f, atrMultiplier: Math.max(0.05, Math.round((f.atrMultiplier - 0.05) * 100) / 100) }))}
+                              >−</button>
+                              <span className="flex-1 text-center text-xs font-mono font-semibold text-white tabular-nums">
+                                {form.atrMultiplier.toFixed(2)}
+                              </span>
+                              <button
+                                type="button"
+                                className="px-2.5 h-full text-muted-foreground hover:text-white transition-colors text-sm"
+                                onClick={() => setForm(f => ({ ...f, atrMultiplier: Math.min(1.00, Math.round((f.atrMultiplier + 0.05) * 100) / 100) }))}
+                              >+</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </FieldRow>
 

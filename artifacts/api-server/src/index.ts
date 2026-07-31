@@ -29,7 +29,7 @@ const marketData       = new MarketDataService();
 const candleAggregator = new CandleAggregator();
 const telegram         = new TelegramService();
 const delta            = new DeltaService(marketData);
-const alertEngine      = new AlertEngine(marketData, telegram, wsManager);
+const alertEngine      = new AlertEngine(marketData, telegram, wsManager, candleAggregator);
 const healthMonitor    = new FeedHealthMonitor(marketData, wsManager, telegram);
 
 // Batch buffer: latest price per symbol — flushed every 5 s

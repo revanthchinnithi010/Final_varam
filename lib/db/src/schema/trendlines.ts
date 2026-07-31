@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, real, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, real, boolean, integer } from "drizzle-orm/pg-core";
 
 export const trendlinesTable = pgTable("trendlines", {
   id:              serial("id").primaryKey(),
@@ -19,6 +19,9 @@ export const trendlinesTable = pgTable("trendlines", {
   telegramEnabled: boolean("telegram_enabled").notNull().default(true),
   cooldownUntil:   timestamp("cooldown_until", { withTimezone: true }),
   createdAt:       timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // ATR-Based Proximity fields
+  atrPeriod:       integer("atr_period").notNull().default(14),
+  atrMultiplier:   real("atr_multiplier").notNull().default(0.15),
 });
 
 export type Trendline = typeof trendlinesTable.$inferSelect;
