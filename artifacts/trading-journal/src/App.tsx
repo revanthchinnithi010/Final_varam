@@ -774,7 +774,16 @@ function App() {
                 position="top-center"
                 theme="dark"
                 toastOptions={{
-                  style: { background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.10)", color: "#fff" },
+                  unstyled: true,
+                  classNames: {
+                    toast: "glass",
+                    title: "text-sm font-semibold text-white",
+                    description: "text-xs text-white/60 mt-0.5",
+                    success: "glass",
+                    error: "glass",
+                    icon: "text-white/80",
+                  },
+                  style: { padding: "14px 18px", minWidth: 260 },
                 }}
               />
             </TooltipProvider>

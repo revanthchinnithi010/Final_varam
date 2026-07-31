@@ -1251,3 +1251,41 @@ html, body { touch-action: manipulation; overscroll-behavior: none; }
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* ── Liquid Glass toast ── */
+.glass {
+  position: relative;
+  background: radial-gradient(ellipse 130% 90% at 50% 0%, rgba(10, 12, 20, 0.630) 0%, rgba(10, 12, 20, 0.550) 45%, rgba(10, 12, 20, 0.500) 100%) !important;
+  backdrop-filter: blur(26px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(140%) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 20px 58px -15px rgba(0,0,0,0.312), 0 1px 2px rgba(0,0,0,0.156), inset 0 0 16px rgba(255,255,255,0.040), inset 0 4px 8px -4px rgba(0,0,0,0.220), inset 0 -1px 1px rgba(0,0,0,0.280), inset 0 1px 1px rgba(255,255,255,0.096), inset 0 0 0 1px rgba(255,255,255,0.063) !important;
+  color: #ffffff !important;
+  overflow: hidden;
+  isolation: isolate;
+  border: none !important;
+}
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 110% 65% at 50% -15%, rgba(255,255,255,0.121) 0%, rgba(255,255,255,0) 70%);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 1;
+}
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.070), inset 0 1px 0 rgba(255,255,255,0.096), inset 0 -1px 0 rgba(255,255,255,0.060);
+  pointer-events: none;
+  z-index: 1;
+}
+.glass > * { position: relative; z-index: 2; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: rgba(10, 12, 20, 1.000) !important; }
+}
