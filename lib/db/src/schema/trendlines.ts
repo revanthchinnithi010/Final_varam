@@ -20,8 +20,10 @@ export const trendlinesTable = pgTable("trendlines", {
   cooldownUntil:   timestamp("cooldown_until", { withTimezone: true }),
   createdAt:       timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   // ATR-Based Proximity fields
-  atrPeriod:       integer("atr_period").notNull().default(14),
-  atrMultiplier:   real("atr_multiplier").notNull().default(0.15),
+  atrPeriod:         integer("atr_period").notNull().default(14),
+  atrMultiplier:     real("atr_multiplier").notNull().default(0.15),
+  // Link back to the chart drawing that spawned this alert (e.g. "TL-004")
+  drawingDisplayId:  text("drawing_display_id"),
 });
 
 export type Trendline = typeof trendlinesTable.$inferSelect;

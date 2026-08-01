@@ -93,6 +93,80 @@ function fmtPrice(p: number): string {
   return p.toFixed(6);
 }
 
+/**
+ * Liang-Barsky line clipping — returns the midpoint of the visible segment,
+ * or null if the segment is entirely outside [margin, W-margin] × [margin, H-margin].
+ */
+function visibleMidpoint(a: Px, b: Px, W: number, H: number): Px | null {
+  const M = 6; // margin from canvas edge
+  const xmin = M, xmax = W - M, ymin = M, ymax = H - M;
+  if (xmax <= xmin || ymax <= ymin) return null;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  let t0 = 0, t1 = 1;
+  const clip = (p: number, q: number): boolean => {
+    if (Math.abs(p) < 1e-10) return q >= 0;
+    const r = q / p;
+    if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+    else       { if (r < t0) return false; if (r < t1) t1 = r; }
+    return true;
+  };
+  if (!clip(-dx, a.x - xmin)) return null;
+  if (!clip( dx, xmax - a.x)) return null;
+  if (!clip(-dy, a.y - ymin)) return null;
+  if (!clip( dy, ymax - a.y)) return null;
+  const tMid = (t0 + t1) / 2;
+  return { x: a.x + tMid * dx, y: a.y + tMid * dy };
+}
+
+/**
+ * Draws a small semi-transparent pill label (e.g. "TL-003") at the visible
+ * midpoint of the line from a→b.  No-op if the line is entirely off-canvas.
+ */
+function renderIdPill(
+  ctx: CanvasRenderingContext2D,
+  a: Px, b: Px,
+  W: number, H: number,
+  label: string,
+  isSelected: boolean,
+) {
+  const mid = visibleMidpoint(a, b, W, H);
+  if (!mid) return;
+  ctx.save();
+  ctx.setLineDash([]);
+  ctx.shadowBlur  = 0;
+  ctx.shadowColor = "transparent";
+  const fs = 10;
+  ctx.font = `600 ${fs}px "Inter",system-ui,sans-serif`;
+  const tw = ctx.measureText(label).width;
+  const pH = 15, pW = tw + 10, r = 3.5;
+  const M2 = 4;
+  // Centre the pill on mid, then clamp it fully inside the canvas
+  const rx = Math.max(M2, Math.min(mid.x - pW / 2, W - pW - M2));
+  const ry = Math.max(M2, Math.min(mid.y - pH / 2, H - pH - M2));
+  ctx.globalAlpha   = 1;
+  ctx.fillStyle     = isSelected ? "rgba(183,255,90,0.18)"   : "rgba(7,17,13,0.85)";
+  ctx.strokeStyle   = isSelected ? "rgba(183,255,90,0.70)"   : "rgba(183,255,90,0.38)";
+  ctx.lineWidth     = isSelected ? 1.2 : 0.8;
+  ctx.beginPath();
+  ctx.moveTo(rx + r, ry);
+  ctx.lineTo(rx + pW - r, ry);
+  ctx.arcTo(rx + pW, ry, rx + pW, ry + r, r);
+  ctx.lineTo(rx + pW, ry + pH - r);
+  ctx.arcTo(rx + pW, ry + pH, rx + pW - r, ry + pH, r);
+  ctx.lineTo(rx + r, ry + pH);
+  ctx.arcTo(rx, ry + pH, rx, ry + pH - r, r);
+  ctx.lineTo(rx, ry + r);
+  ctx.arcTo(rx, ry, rx + r, ry, r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle    = isSelected ? "#B7FF5A" : "rgba(255,255,255,0.92)";
+  ctx.textAlign    = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, rx + pW / 2, ry + pH / 2);
+  ctx.restore();
+}
+
 function renderLineLabelCanvas(
   ctx: CanvasRenderingContext2D,
   p0: Px, p1: Px,
@@ -416,6 +490,7 @@ export function renderDrawingsToCanvas(
           ctx.restore();
         }
         if (style.text?.trim()) renderLineLabelCanvas(ctx, px[0], px[1], style, col, sw);
+        if (drawing.displayId) renderIdPill(ctx, a, b, W, clipH > 0 ? clipH : H, drawing.displayId, isSelected);
         break;
       }
 
@@ -427,6 +502,7 @@ export function renderDrawingsToCanvas(
         dot(ctx, px[0].x, px[0].y, 3, col);
         dot(ctx, px[1].x, px[1].y, 3, col);
         if (style.text?.trim()) renderLineLabelCanvas(ctx, px[0], px[1], style, col, sw);
+        if (drawing.displayId) renderIdPill(ctx, a, b, W, clipH > 0 ? clipH : H, drawing.displayId, isSelected);
         break;
       }
 
@@ -437,6 +513,7 @@ export function renderDrawingsToCanvas(
         drawLine(ctx, a, b);
         dot(ctx, px[0].x, px[0].y, 3.5, col);
         if (style.text?.trim()) renderLineLabelCanvas(ctx, px[0], px[1], style, col, sw);
+        if (drawing.displayId) renderIdPill(ctx, a, b, W, clipH > 0 ? clipH : H, drawing.displayId, isSelected);
         break;
       }
 
@@ -813,6 +890,26 @@ export function renderDrawingsToCanvas(
               drawLine(ctx, a, b);
               if (!extL) dot(ctx, px[0].x, px[0].y, 3.5, col);
               if (!extR) dot(ctx, px[1].x, px[1].y, 3.5, col);
+              if (d.displayId) renderIdPill(ctx, a, b, W, clipH > 0 ? clipH : H, d.displayId, isSelected);
+              break;
+            }
+            case "extended": {
+              if (px.length < 2) break;
+              const [ea, eb] = extendBothEnds(px[0], px[1], W, H);
+              if (isSelected) { ctx.save(); ctx.shadowBlur = 0; ctx.lineWidth = sw + 7; ctx.globalAlpha *= 0.2; drawLine(ctx, ea, eb); ctx.restore(); }
+              drawLine(ctx, ea, eb);
+              dot(ctx, px[0].x, px[0].y, 3, col);
+              dot(ctx, px[1].x, px[1].y, 3, col);
+              if (d.displayId) renderIdPill(ctx, ea, eb, W, clipH > 0 ? clipH : H, d.displayId, isSelected);
+              break;
+            }
+            case "ray": {
+              if (px.length < 2) break;
+              const [ra, rb] = extendRight(px[0], px[1], W);
+              if (isSelected) { ctx.save(); ctx.shadowBlur = 0; ctx.lineWidth = sw + 7; ctx.globalAlpha *= 0.2; drawLine(ctx, ra, rb); ctx.restore(); }
+              drawLine(ctx, ra, rb);
+              dot(ctx, px[0].x, px[0].y, 3.5, col);
+              if (d.displayId) renderIdPill(ctx, ra, rb, W, clipH > 0 ? clipH : H, d.displayId, isSelected);
               break;
             }
             case "hline": {

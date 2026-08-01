@@ -227,6 +227,13 @@ const MIGRATIONS = [
   // ATR-Based Proximity alert fields
   `ALTER TABLE trendlines ADD COLUMN IF NOT EXISTS atr_period INTEGER NOT NULL DEFAULT 14`,
   `ALTER TABLE trendlines ADD COLUMN IF NOT EXISTS atr_multiplier REAL NOT NULL DEFAULT 0.15`,
+
+  // Persistent display IDs for chart drawings (TL-001, TL-002, …)
+  `CREATE SEQUENCE IF NOT EXISTS drawing_display_id_seq START 1 MINVALUE 1 NO CYCLE`,
+  `ALTER TABLE drawings ADD COLUMN IF NOT EXISTS display_id TEXT`,
+
+  // Link trendline alerts back to the chart drawing that spawned them
+  `ALTER TABLE trendlines ADD COLUMN IF NOT EXISTS drawing_display_id TEXT`,
 ];
 
 export async function runMigrations(): Promise<void> {

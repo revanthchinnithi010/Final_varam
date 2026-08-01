@@ -38,6 +38,9 @@ const PatchBody = z.object({
 
 const IdParam = z.object({ id: z.coerce.number().int().positive() });
 
+// Tool types that get a persistent TL-NNN display ID
+const LINE_TOOL_TYPES = new Set(["trendline", "ray", "extended"]);
+
 function serializeRow(row: Record<string, unknown>) {
   return {
     id:        row["id"],
@@ -49,6 +52,7 @@ function serializeRow(row: Record<string, unknown>) {
     isLocked:  row["is_locked"],
     isVisible: row["is_visible"],
     createdAt: row["created_at"],
+    ...(row["display_id"] != null ? { displayId: row["display_id"] } : {}),
   };
 }
 
@@ -93,10 +97,19 @@ drawingsRouter.post("/drawings", async (req, res): Promise<void> => {
   try {
     const client = await pool.connect();
     try {
+      // Generate a persistent display ID (TL-001, TL-002 …) for line-type drawings
+      let displayId: string | null = null;
+      if (LINE_TOOL_TYPES.has(d.toolType)) {
+        const seqRes = await client.query<{ display_id: string }>(
+          `SELECT 'TL-' || LPAD(nextval('drawing_display_id_seq')::TEXT, 3, '0') AS display_id`,
+        );
+        displayId = seqRes.rows[0]?.display_id ?? null;
+      }
+
       const result = await client.query(
-        `INSERT INTO drawings (symbol, timeframe, tool_type, points, style, is_locked, is_visible)
-         VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6, $7) RETURNING *`,
-        [d.symbol, d.timeframe, d.toolType, JSON.stringify(d.points), JSON.stringify(style), d.isLocked, d.isVisible],
+        `INSERT INTO drawings (symbol, timeframe, tool_type, points, style, is_locked, is_visible, display_id)
+         VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6, $7, $8) RETURNING *`,
+        [d.symbol, d.timeframe, d.toolType, JSON.stringify(d.points), JSON.stringify(style), d.isLocked, d.isVisible, displayId],
       );
       res.status(201).json(serializeRow(result.rows[0] as Record<string, unknown>));
     } finally {

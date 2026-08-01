@@ -31,6 +31,8 @@ export interface DrawingAlertRow {
   triggeredPrice: number | null;
   cooldownUntil: string | null;
   createdAt: string;
+  /** Display ID of the chart drawing this alert was created from (e.g. "TL-004"). */
+  drawingDisplayId?: string | null;
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -536,7 +538,7 @@ export function DrawingAlertModal({
     if (!isHLine && !p2ISO) { setError("Enter Point 2 date and time (UTC)."); return; }
     if (timeOrderError) { setError(timeOrderError); return; }
 
-    const body = {
+    const body: Record<string, unknown> = {
       symbol,
       timeframe,
       drawingType,
@@ -547,6 +549,7 @@ export function DrawingAlertModal({
       point2Time:  isHLine ? new Date().toISOString() : p2ISO!,
       telegramEnabled: telegram,
       notes: notes.trim() || undefined,
+      ...(prefillDrawing?.displayId ? { drawingDisplayId: prefillDrawing.displayId } : {}),
     };
 
     setSaving(true);
@@ -632,9 +635,23 @@ export function DrawingAlertModal({
                 <TrendingUp className="w-3.5 h-3.5" style={{ color: "#B7FF5A" }} />
               </div>
               <div>
-                <p className="text-[13.5px] font-bold text-white leading-none">
-                  {editItem ? "Edit Alert" : "New Drawing Alert"}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13.5px] font-bold text-white leading-none">
+                    {editItem ? "Edit Alert" : "New Drawing Alert"}
+                  </p>
+                  {prefillDrawing?.displayId && !editItem && (
+                    <span
+                      className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                      style={{
+                        background: "rgba(183,255,90,0.12)",
+                        border:     "1px solid rgba(183,255,90,0.3)",
+                        color:      "#B7FF5A",
+                      }}
+                    >
+                      {prefillDrawing.displayId}
+                    </span>
+                  )}
+                </div>
                 <p className="text-[10px] mt-0.5 font-mono" style={{ color: "rgba(167,184,169,0.5)" }}>
                   {symbol}
                 </p>

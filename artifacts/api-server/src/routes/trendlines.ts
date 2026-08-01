@@ -13,18 +13,20 @@ const PRICE_CONDITIONS = ["above_price","below_price","touch_price"] as const;
 const ALL_CONDITIONS = [...TRENDLINE_CONDITIONS, ...ZONE_CONDITIONS, ...PRICE_CONDITIONS] as const;
 
 const CreateTrendlineBody = z.object({
-  symbol:          z.string().toUpperCase().refine(s => SUPPORTED_SYMBOLS.includes(s), { message: "Unsupported symbol" }),
-  timeframe:       z.string().default("1H"),
-  point1Price:     z.number().positive(),
-  point1Time:      z.string().datetime(),
-  point2Price:     z.number().positive(),
-  point2Time:      z.string().datetime(),
-  condition:       z.enum(ALL_CONDITIONS).default("breakout"),
-  drawingType:     z.enum(DRAWING_TYPES).default("trendline"),
-  notes:           z.string().max(500).optional(),
-  telegramEnabled: z.boolean().optional().default(true),
-  atrPeriod:       z.number().int().min(5).max(50).optional().default(14),
-  atrMultiplier:   z.number().min(0.05).max(1.0).optional().default(0.15),
+  symbol:            z.string().toUpperCase().refine(s => SUPPORTED_SYMBOLS.includes(s), { message: "Unsupported symbol" }),
+  timeframe:         z.string().default("1H"),
+  point1Price:       z.number().positive(),
+  point1Time:        z.string().datetime(),
+  point2Price:       z.number().positive(),
+  point2Time:        z.string().datetime(),
+  condition:         z.enum(ALL_CONDITIONS).default("breakout"),
+  drawingType:       z.enum(DRAWING_TYPES).default("trendline"),
+  notes:             z.string().max(500).optional(),
+  telegramEnabled:   z.boolean().optional().default(true),
+  atrPeriod:         z.number().int().min(5).max(50).optional().default(14),
+  atrMultiplier:     z.number().min(0.05).max(1.0).optional().default(0.15),
+  /** Display ID of the chart drawing this alert was created from (e.g. "TL-004") */
+  drawingDisplayId:  z.string().optional(),
 });
 
 const UpdateTrendlineBody = z.object({
@@ -78,21 +80,22 @@ export function createTrendlinesRouter(alertEngine: AlertEngine): IRouter {
       const p2time  = d.drawingType === "horizontal_line" ? new Date(p1t.getTime() + 3_600_000) : p2t;
 
       const [row] = await db.insert(trendlinesTable).values({
-        symbol:          d.symbol,
-        timeframe:       d.timeframe,
-        point1Price:     d.point1Price,
-        point1Time:      p1t,
-        point2Price:     p2Price,
-        point2Time:      p2time,
-        condition:       d.condition,
-        drawingType:     d.drawingType,
-        alertStatus:     "active",
-        notes:           d.notes ?? null,
-        telegramEnabled: d.telegramEnabled,
-        isActive:        true,
-        isTriggered:     false,
-        atrPeriod:       d.atrPeriod ?? 14,
-        atrMultiplier:   d.atrMultiplier ?? 0.15,
+        symbol:           d.symbol,
+        timeframe:        d.timeframe,
+        point1Price:      d.point1Price,
+        point1Time:       p1t,
+        point2Price:      p2Price,
+        point2Time:       p2time,
+        condition:        d.condition,
+        drawingType:      d.drawingType,
+        alertStatus:      "active",
+        notes:            d.notes ?? null,
+        telegramEnabled:  d.telegramEnabled,
+        isActive:         true,
+        isTriggered:      false,
+        atrPeriod:        d.atrPeriod ?? 14,
+        atrMultiplier:    d.atrMultiplier ?? 0.15,
+        drawingDisplayId: d.drawingDisplayId ?? null,
       }).returning();
 
       await alertEngine.reloadAlerts();

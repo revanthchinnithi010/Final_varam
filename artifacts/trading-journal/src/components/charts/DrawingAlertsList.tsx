@@ -562,6 +562,18 @@ export function DrawingAlertsList({ symbol, currentInterval, currentPrice }: Pro
                             style={{ color: isTrig ? "#f87171" : "#F3FFF3" }}>
                             {dtLabel}
                           </p>
+                          {row.drawingDisplayId && (
+                            <span
+                              className="text-[8px] font-mono px-1 py-0.5 rounded shrink-0"
+                              style={{
+                                background: isTrig ? "rgba(239,68,68,0.12)" : "rgba(183,255,90,0.10)",
+                                border:     `1px solid ${isTrig ? "rgba(239,68,68,0.3)" : "rgba(183,255,90,0.25)"}`,
+                                color:      isTrig ? "#f87171" : "#B7FF5A",
+                              }}
+                            >
+                              {row.drawingDisplayId}
+                            </span>
+                          )}
                           {allSymbols && (
                             <span className="text-[8px] px-1 rounded shrink-0"
                               style={{ background: "rgba(57,91,67,0.2)", color: "rgba(167,184,169,0.6)" }}>

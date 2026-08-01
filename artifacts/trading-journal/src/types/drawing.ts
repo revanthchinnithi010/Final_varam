@@ -72,6 +72,8 @@ export interface Drawing {
   isLocked:  boolean;
   isVisible: boolean;
   createdAt: string;
+  /** Persistent human-readable ID for trendlines/rays (e.g. "TL-001"). */
+  displayId?: string;
 }
 
 export function isFreehand(tool: ToolType): boolean {

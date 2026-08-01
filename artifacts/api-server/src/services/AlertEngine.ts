@@ -51,6 +51,7 @@ interface TrendlineRow {
   cooldownUntil: Date | null;
   atrPeriod: number;
   atrMultiplier: number;
+  drawingDisplayId: string | null;
 }
 
 export class AlertEngine {
@@ -190,8 +191,9 @@ export class AlertEngine {
           notes: t.notes ?? null,
           telegramEnabled: t.telegramEnabled,
           cooldownUntil: t.cooldownUntil,
-          atrPeriod:    t.atrPeriod ?? 14,
-          atrMultiplier: t.atrMultiplier ?? 0.15,
+          atrPeriod:        t.atrPeriod ?? 14,
+          atrMultiplier:    t.atrMultiplier ?? 0.15,
+          drawingDisplayId: t.drawingDisplayId ?? null,
         });
       }
 
@@ -531,26 +533,28 @@ export class AlertEngine {
         })
         .where(eq(trendlinesTable.id, tl.id));
 
+      const drawingRef = tl.drawingDisplayId ? ` (${tl.drawingDisplayId})` : "";
       await db.insert(alertEventsTable).values({
         alertId: tl.id, alertType: "trendline",
         symbol: tl.symbol, condition: tl.condition,
         priceAtTrigger: triggeredPrice,
-        message: `Price ${direction} ${tl.drawingType} (projected: ${projectedPrice.toFixed(5)})`,
+        message: `Trendline Alert Triggered${drawingRef} — Price ${direction} ${tl.drawingType} (projected: ${projectedPrice.toFixed(5)})`,
       });
 
       this.wsManager.broadcast({
-        type:          "alert_triggered",
-        alertType:     "trendline",
-        drawingType:   tl.drawingType,
-        alertId:       tl.id,
-        symbol:        tl.symbol,
-        timeframe:     tl.timeframe,
-        condition:     tl.condition,
-        conditionLabel: condLabel,
+        type:             "alert_triggered",
+        alertType:        "trendline",
+        drawingType:      tl.drawingType,
+        drawingDisplayId: tl.drawingDisplayId ?? null,
+        alertId:          tl.id,
+        symbol:           tl.symbol,
+        timeframe:        tl.timeframe,
+        condition:        tl.condition,
+        conditionLabel:   condLabel,
         triggeredPrice,
         projectedPrice,
         direction,
-        triggeredAt:   new Date().toISOString(),
+        triggeredAt:      new Date().toISOString(),
       });
 
       if (tl.telegramEnabled) {
