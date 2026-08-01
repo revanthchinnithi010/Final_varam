@@ -325,7 +325,9 @@ function AlertTypeCard({ accentColor, title, description, index, onPress }: Card
 
 function drawingDisplayId(d: Drawing): string {
   const pad = String(d.id).padStart(4, "0");
-  return d.toolType === "ray" ? `RAY-${pad}` : `TL-${pad}`;
+  if (d.toolType === "ray")  return `RAY-${pad}`;
+  if (d.toolType === "rect") return `ZONE-${pad}`;
+  return `TL-${pad}`;
 }
 function fmtUtcDate(sec: number): string {
   return new Date(sec * 1000).toLocaleDateString("en-GB", {
@@ -627,6 +629,49 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
     if (open) setForm(f => ({ ...f, timeframe: chartHumanTf }));
   }, [chartHumanTf, open]);
 
+  // ── Drawing detection — same store as TrendlineAlertScreen ─────────────────
+  const allDrawings      = useDrawingStore(s => s.drawings);
+  const normalSymbol     = (form.symbol ?? "").trim().toUpperCase();
+  const normalTf         = toCanonicalMinutes(form.timeframe);
+  const relevantDrawings = allDrawings.filter(d =>
+    d.toolType === "rect" &&
+    (d.symbol ?? "").trim().toUpperCase() === normalSymbol &&
+    toCanonicalMinutes(d.timeframe) === normalTf,
+  );
+
+  const [selectedDrawingId, setSelectedDrawingId] = useState<number | null>(null);
+  const [manualOpen, setManualOpen]               = useState(false);
+
+  // On open: clear selection; auto-expand manual entry if no rectangles exist.
+  useEffect(() => {
+    if (open) {
+      setSelectedDrawingId(null);
+      setManualOpen(
+        allDrawings.filter(d =>
+          d.toolType === "rect" &&
+          (d.symbol ?? "").trim().toUpperCase() === (symbol ?? "").trim().toUpperCase() &&
+          toCanonicalMinutes(d.timeframe) === toCanonicalMinutes(intervalToHumanTf(useChartStore.getState().interval)),
+        ).length === 0,
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Auto-populate upper/lower price whenever a rectangle is selected.
+  useEffect(() => {
+    if (selectedDrawingId === null) return;
+    const d = allDrawings.find(dr => dr.id === selectedDrawingId);
+    if (!d) { setSelectedDrawingId(null); return; }
+    const p0 = d.points[0], p1 = d.points[1];
+    if (!p0 || !p1) return;
+    setForm(f => ({
+      ...f,
+      upperPrice: String(Math.max(p0.price, p1.price)),
+      lowerPrice: String(Math.min(p0.price, p1.price)),
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDrawingId, allDrawings]);
+
   const canSave = !!(form.upperPrice && form.lowerPrice);
 
   const handleSave = () => {
@@ -760,36 +805,144 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
               })}
             </div>
 
-            {/* Zone Type */}
-            <FieldRow label="Zone Type">
-              <div className="grid grid-cols-2 gap-2">
-                {zoneTypes.map(z => (
-                  <AnimatedButton key={z.value} onClick={() => setForm(f => ({ ...f, zoneType: z.value }))}
-                    className={cn(
-                      "py-2 rounded-lg text-xs font-semibold border transition-all",
-                      form.zoneType === z.value
-                        ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
-                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
-                    )}>
-                    {z.label}
-                  </AnimatedButton>
-                ))}
-              </div>
-            </FieldRow>
+            {/* ── SELECT EXISTING ZONE ── */}
+            <div style={{ marginTop: 8 }}>
+              <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
+                Select Existing Zone
+              </p>
+              {relevantDrawings.length === 0 ? (
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-5 text-center">
+                  <p className="text-xs text-muted-foreground/40">
+                    No rectangle zones found for the selected Symbol and Timeframe.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {relevantDrawings.map(d => {
+                    const p0 = d.points[0];
+                    const p1 = d.points[1];
+                    const isSelected  = selectedDrawingId === d.id;
+                    const upperP      = p0 && p1 ? Math.max(p0.price, p1.price) : null;
+                    const lowerP      = p0 && p1 ? Math.min(p0.price, p1.price) : null;
+                    // For time display: p0 is "start" corner, p1 is "end" corner
+                    const startPoint  = p0 && p1 ? (p0.time <= p1.time ? p0 : p1) : p0;
+                    const endPoint    = p0 && p1 ? (p0.time <= p1.time ? p1 : p0) : p1;
+                    return (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => setSelectedDrawingId(isSelected ? null : d.id)}
+                        className={cn(
+                          "w-full text-left rounded-xl border transition-colors",
+                          isSelected
+                            ? "border-orange-500/30 bg-orange-500/[0.05]"
+                            : "border-white/[0.06] bg-white/[0.02]",
+                        )}
+                        style={{ padding: "14px 14px" }}
+                      >
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
 
-            {/* Upper / Lower Price */}
-            <div className="grid grid-cols-2 gap-3">
-              <FieldRow label="Upper Price">
-                <Input type="number" placeholder="Upper" value={form.upperPrice}
-                  onChange={e => setForm(f => ({ ...f, upperPrice: e.target.value }))}
-                  className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
-              </FieldRow>
-              <FieldRow label="Lower Price">
-                <Input type="number" placeholder="Lower" value={form.lowerPrice}
-                  onChange={e => setForm(f => ({ ...f, lowerPrice: e.target.value }))}
-                  className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
-              </FieldRow>
+                          {/* ── Radio ── */}
+                          <div style={{
+                            marginTop: 2, width: 18, height: 18, borderRadius: "50%",
+                            flexShrink: 0,
+                            border: isSelected ? "none" : "2px solid rgba(255,255,255,0.22)",
+                            background: isSelected ? "#fb923c" : "transparent",
+                            transition: "background 0.15s, border-color 0.15s",
+                          }} />
+
+                          {/* ── Two-column body ── */}
+                          <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 8px" }}>
+
+                            {/* LEFT: Zone · ID · Upper Price · start time */}
+                            <div>
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginBottom: 10 }}>
+                                <span style={{
+                                  fontSize: 13, fontWeight: 700, letterSpacing: "0.05em",
+                                  textTransform: "uppercase",
+                                  color: isSelected ? "#fb923c" : "rgba(255,255,255,0.85)",
+                                }}>
+                                  Zone
+                                </span>
+                                <span style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(255,255,255,0.32)" }}>
+                                  {drawingDisplayId(d)}
+                                </span>
+                              </div>
+
+                              <p style={{
+                                fontSize: 9, fontWeight: 600, letterSpacing: "0.1em",
+                                textTransform: "uppercase", color: "rgba(255,255,255,0.28)",
+                                marginBottom: 5,
+                              }}>
+                                Upper Price
+                              </p>
+                              <p style={{
+                                fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.92)",
+                                fontVariantNumeric: "tabular-nums", lineHeight: 1.15,
+                                letterSpacing: "-0.01em",
+                              }}>
+                                {upperP !== null ? fmtDrawingPrice(upperP) : "—"}
+                              </p>
+                              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+                                {startPoint ? fmtUtcDate(startPoint.time) : "—"}
+                              </p>
+                              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.32)" }}>
+                                {startPoint ? fmtUtcTime(startPoint.time) : "—"}
+                              </p>
+                            </div>
+
+                            {/* RIGHT: Lower Price · end time */}
+                            <div>
+                              {/* Spacer aligns "Lower Price" with "Upper Price" */}
+                              <div style={{ height: 33 }} />
+
+                              <p style={{
+                                fontSize: 9, fontWeight: 600, letterSpacing: "0.1em",
+                                textTransform: "uppercase", color: "rgba(255,255,255,0.28)",
+                                marginBottom: 5,
+                              }}>
+                                Lower Price
+                              </p>
+                              <p style={{
+                                fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.92)",
+                                fontVariantNumeric: "tabular-nums", lineHeight: 1.15,
+                                letterSpacing: "-0.01em",
+                              }}>
+                                {lowerP !== null ? fmtDrawingPrice(lowerP) : "—"}
+                              </p>
+                              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+                                {endPoint ? fmtUtcDate(endPoint.time) : "—"}
+                              </p>
+                              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.32)" }}>
+                                {endPoint ? fmtUtcTime(endPoint.time) : "—"}
+                              </p>
+                            </div>
+
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            {/* Notes */}
+            <FieldRow label="Notes">
+              <textarea
+                rows={2}
+                placeholder="Zone notes..."
+                value={form.notes}
+                onChange={e => {
+                  setForm(f => ({ ...f, notes: e.target.value }));
+                  const el = e.target;
+                  el.style.height = "auto";
+                  el.style.height = `${el.scrollHeight}px`;
+                }}
+                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50"
+                style={{ overflow: "hidden", minHeight: "64px" }}
+              />
+            </FieldRow>
 
             {/* Alert Condition */}
             <FieldRow label="Alert Condition">
@@ -800,7 +953,7 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
                       "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",
                       form.condition === c
                         ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
-                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white",
                     )}>
                     {c}
                   </AnimatedButton>
@@ -808,12 +961,75 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
               </div>
             </FieldRow>
 
-            {/* Notes */}
-            <FieldRow label="Notes">
-              <textarea rows={2} placeholder="Zone notes..." value={form.notes}
-                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50" />
-            </FieldRow>
+            {/* ── OR ENTER MANUALLY collapsible ── */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setManualOpen(o => !o)}
+                className="flex items-center gap-3 w-full"
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                <div className="flex-1 h-px bg-white/[0.06]" />
+                <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider select-none">
+                  or enter manually
+                </span>
+                <motion.div
+                  animate={{ rotate: manualOpen ? 180 : 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                >
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40" />
+                </motion.div>
+                <div className="flex-1 h-px bg-white/[0.06]" />
+              </button>
+
+              <AnimatePresence initial={false}>
+                {manualOpen && (
+                  <motion.div
+                    key="manual-body"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.27, ease: "easeInOut" }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <div className="space-y-4 pt-4">
+
+                      {/* Zone Type */}
+                      <FieldRow label="Zone Type">
+                        <div className="grid grid-cols-2 gap-2">
+                          {zoneTypes.map(z => (
+                            <AnimatedButton key={z.value} onClick={() => setForm(f => ({ ...f, zoneType: z.value }))}
+                              className={cn(
+                                "py-2 rounded-lg text-xs font-semibold border transition-all",
+                                form.zoneType === z.value
+                                  ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
+                                  : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white",
+                              )}>
+                              {z.label}
+                            </AnimatedButton>
+                          ))}
+                        </div>
+                      </FieldRow>
+
+                      {/* Upper / Lower Price */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <FieldRow label="Upper Price">
+                          <Input type="number" placeholder="Upper" value={form.upperPrice}
+                            onChange={e => setForm(f => ({ ...f, upperPrice: e.target.value }))}
+                            className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
+                        </FieldRow>
+                        <FieldRow label="Lower Price">
+                          <Input type="number" placeholder="Lower" value={form.lowerPrice}
+                            onChange={e => setForm(f => ({ ...f, lowerPrice: e.target.value }))}
+                            className="bg-white/[0.04] border-white/[0.08] text-white placeholder:text-muted-foreground/50 h-9" />
+                        </FieldRow>
+                      </div>
+
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Actions */}
             <div className="flex gap-2 pt-1">
@@ -830,7 +1046,7 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
                   letterSpacing: "0.02em",
                 }}
                 onClick={handleSave}>
-                Create Zone Alert
+                Create Zone
               </AnimatedButton>
             </div>
 
