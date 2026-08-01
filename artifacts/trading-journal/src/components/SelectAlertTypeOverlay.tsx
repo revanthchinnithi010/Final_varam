@@ -361,18 +361,31 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
     return undefined;
   }, [open]);
 
+  const chartInterval = useChartStore(s => s.interval);
+  const chartHumanTf  = intervalToHumanTf(chartInterval);
+
   const [form, setForm] = useState({
     symbol: symbol ?? "NAS100",
+    timeframe: intervalToHumanTf(useChartStore.getState().interval),
     condition: "above" as "above" | "below" | "touch",
     targetPrice: "", notes: "", expiry: "",
   });
 
-  // Sync symbol each time the screen opens.
+  // Sync symbol and timeframe each time the screen opens.
   useEffect(() => {
     if (open) {
-      setForm(f => ({ ...f, symbol: symbol ?? "" }));
+      setForm(f => ({
+        ...f,
+        symbol:    symbol ?? "",
+        timeframe: intervalToHumanTf(useChartStore.getState().interval),
+      }));
     }
   }, [open, symbol]);
+
+  // Keep timeframe in sync if the user changes chart interval while open.
+  useEffect(() => {
+    if (open) setForm(f => ({ ...f, timeframe: chartHumanTf }));
+  }, [chartHumanTf, open]);
 
   const canSave = !!form.targetPrice;
 
@@ -381,7 +394,8 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
     try {
       onSave({
         id: `pa${Date.now()}`, type: "price",
-        symbol: form.symbol, condition: form.condition,
+        symbol: form.symbol, timeframe: form.timeframe,
+        condition: form.condition,
         targetPrice: parseFloat(form.targetPrice),
         currentPrice: 0, notes: form.notes,
         status: "active", expiry: form.expiry || null,
@@ -459,6 +473,46 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
                 </div>
               );
             })()}
+
+            {/* ── TIMEFRAME PILL STRIP ── */}
+            <div style={{
+              display: "flex", gap: 6,
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              paddingBottom: 2,
+              marginBottom: -2,
+            } as React.CSSProperties}>
+              {TF_PILLS.map(tf => {
+                const isActive = toCanonicalMinutes(form.timeframe) === toCanonicalMinutes(tf);
+                return (
+                  <button
+                    key={tf}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, timeframe: tf }))}
+                    style={{
+                      flexShrink: 0,
+                      height: 34,
+                      minWidth: 44,
+                      paddingLeft: 12,
+                      paddingRight: 12,
+                      borderRadius: 8,
+                      border: isActive ? "1.5px solid #fb923c" : "1px solid rgba(255,255,255,0.10)",
+                      background: isActive ? "#fb923c" : "rgba(255,255,255,0.03)",
+                      color: isActive ? "#ffffff" : "rgba(255,255,255,0.45)",
+                      fontSize: 12,
+                      fontWeight: isActive ? 700 : 500,
+                      letterSpacing: "0.02em",
+                      cursor: "pointer",
+                      transition: "background 0.15s, border-color 0.15s, color 0.15s",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {tf}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Condition */}
             <FieldRow label="Condition">
@@ -666,10 +720,45 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
               );
             })()}
 
-            {/* Timeframe */}
-            <FieldRow label="Timeframe">
-              <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
-            </FieldRow>
+            {/* ── TIMEFRAME PILL STRIP ── */}
+            <div style={{
+              display: "flex", gap: 6,
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              paddingBottom: 2,
+              marginBottom: -2,
+            } as React.CSSProperties}>
+              {TF_PILLS.map(tf => {
+                const isActive = toCanonicalMinutes(form.timeframe) === toCanonicalMinutes(tf);
+                return (
+                  <button
+                    key={tf}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, timeframe: tf }))}
+                    style={{
+                      flexShrink: 0,
+                      height: 34,
+                      minWidth: 44,
+                      paddingLeft: 12,
+                      paddingRight: 12,
+                      borderRadius: 8,
+                      border: isActive ? "1.5px solid #fb923c" : "1px solid rgba(255,255,255,0.10)",
+                      background: isActive ? "#fb923c" : "rgba(255,255,255,0.03)",
+                      color: isActive ? "#ffffff" : "rgba(255,255,255,0.45)",
+                      fontSize: 12,
+                      fontWeight: isActive ? 700 : 500,
+                      letterSpacing: "0.02em",
+                      cursor: "pointer",
+                      transition: "background 0.15s, border-color 0.15s, color 0.15s",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {tf}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Zone Type */}
             <FieldRow label="Zone Type">

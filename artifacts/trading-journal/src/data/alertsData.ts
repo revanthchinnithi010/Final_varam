@@ -7,6 +7,7 @@ export interface PriceAlert {
   id: string;
   type: "price";
   symbol: string;
+  timeframe: string;
   condition: "above" | "below" | "touch";
   targetPrice: number;
   currentPrice: number;
@@ -59,6 +60,7 @@ export const SAMPLE_PRICE_ALERTS: PriceAlert[] = [
     id: "pa1",
     type: "price",
     symbol: "NAS100",
+    timeframe: "1H",
     condition: "above",
     targetPrice: 18750,
     currentPrice: 18490,
@@ -72,6 +74,7 @@ export const SAMPLE_PRICE_ALERTS: PriceAlert[] = [
     id: "pa2",
     type: "price",
     symbol: "US30",
+    timeframe: "4H",
     condition: "below",
     targetPrice: 39000,
     currentPrice: 39680,
@@ -85,6 +88,7 @@ export const SAMPLE_PRICE_ALERTS: PriceAlert[] = [
     id: "pa3",
     type: "price",
     symbol: "XAUUSD",
+    timeframe: "1D",
     condition: "touch",
     targetPrice: 2350,
     currentPrice: 2345.8,
@@ -98,6 +102,7 @@ export const SAMPLE_PRICE_ALERTS: PriceAlert[] = [
     id: "pa4",
     type: "price",
     symbol: "BTCUSDT",
+    timeframe: "4H",
     condition: "above",
     targetPrice: 70000,
     currentPrice: 69100,
@@ -111,6 +116,7 @@ export const SAMPLE_PRICE_ALERTS: PriceAlert[] = [
     id: "pa5",
     type: "price",
     symbol: "ETHUSDT",
+    timeframe: "1H",
     condition: "below",
     targetPrice: 3000,
     currentPrice: 3280,
@@ -124,6 +130,7 @@ export const SAMPLE_PRICE_ALERTS: PriceAlert[] = [
     id: "pa6",
     type: "price",
     symbol: "EURUSD",
+    timeframe: "1D",
     condition: "touch",
     targetPrice: 1.1000,
     currentPrice: 1.0912,
