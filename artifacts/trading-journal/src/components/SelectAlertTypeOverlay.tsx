@@ -428,10 +428,37 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
         } as React.CSSProperties}>
           <div className="space-y-4">
 
-            {/* Symbol */}
-            <FieldRow label="Symbol">
-              <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
-            </FieldRow>
+            {/* ── SYMBOL DISPLAY ── */}
+            {(() => {
+              const desc = (SYMBOL_CATALOG[form.symbol]?.description) || deriveMeta(form.symbol).label;
+              return (
+                <div style={{
+                  display: "flex", alignItems: "stretch", gap: 0,
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  overflow: "hidden",
+                }}>
+                  <div style={{ width: 3, background: "#fb923c", flexShrink: 0 }} />
+                  <div style={{ padding: "11px 14px" }}>
+                    <p style={{
+                      fontSize: 9, fontWeight: 600, letterSpacing: "0.1em",
+                      color: "rgba(255,255,255,0.30)", textTransform: "uppercase",
+                      marginBottom: 4,
+                    }}>Instrument</p>
+                    <p style={{
+                      fontSize: 17, fontWeight: 700,
+                      color: "rgba(255,255,255,0.92)",
+                      letterSpacing: "0.01em", lineHeight: 1,
+                    }}>{form.symbol || "—"}</p>
+                    <p style={{
+                      fontSize: 11, color: "rgba(255,255,255,0.38)",
+                      marginTop: 3, letterSpacing: "0.01em",
+                    }}>{desc}</p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Condition */}
             <FieldRow label="Condition">
@@ -607,15 +634,42 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
         } as React.CSSProperties}>
           <div className="space-y-4">
 
-            {/* Symbol + Timeframe */}
-            <div className="grid grid-cols-2 gap-3">
-              <FieldRow label="Symbol">
-                <AlertSelect value={form.symbol} onChange={v => setForm(f => ({ ...f, symbol: v }))} options={SYMBOLS} />
-              </FieldRow>
-              <FieldRow label="Timeframe">
-                <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
-              </FieldRow>
-            </div>
+            {/* ── SYMBOL DISPLAY ── */}
+            {(() => {
+              const desc = (SYMBOL_CATALOG[form.symbol]?.description) || deriveMeta(form.symbol).label;
+              return (
+                <div style={{
+                  display: "flex", alignItems: "stretch", gap: 0,
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  overflow: "hidden",
+                }}>
+                  <div style={{ width: 3, background: "#fb923c", flexShrink: 0 }} />
+                  <div style={{ padding: "11px 14px" }}>
+                    <p style={{
+                      fontSize: 9, fontWeight: 600, letterSpacing: "0.1em",
+                      color: "rgba(255,255,255,0.30)", textTransform: "uppercase",
+                      marginBottom: 4,
+                    }}>Instrument</p>
+                    <p style={{
+                      fontSize: 17, fontWeight: 700,
+                      color: "rgba(255,255,255,0.92)",
+                      letterSpacing: "0.01em", lineHeight: 1,
+                    }}>{form.symbol || "—"}</p>
+                    <p style={{
+                      fontSize: 11, color: "rgba(255,255,255,0.38)",
+                      marginTop: 3, letterSpacing: "0.01em",
+                    }}>{desc}</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Timeframe */}
+            <FieldRow label="Timeframe">
+              <AlertSelect value={form.timeframe} onChange={v => setForm(f => ({ ...f, timeframe: v }))} options={TIMEFRAMES} />
+            </FieldRow>
 
             {/* Zone Type */}
             <FieldRow label="Zone Type">
