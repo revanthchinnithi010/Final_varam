@@ -12,7 +12,7 @@ const CreateZoneBody = z.object({
   lowerPrice:      z.number().positive(),
   zoneType:        z.enum(["supply","demand","support_resistance","order_block"]).default("support_resistance"),
   timeframe:       z.string().default("1H"),
-  condition:       z.enum(["touch","break","retest"]).default("touch"),
+  condition:       z.enum(["enter","touch","break","retest"]).default("touch"),
   notes:           z.string().max(500).optional(),
   telegramEnabled: z.boolean().optional().default(true),
 }).refine(d => d.upperPrice > d.lowerPrice, { message: "upperPrice must be greater than lowerPrice" });

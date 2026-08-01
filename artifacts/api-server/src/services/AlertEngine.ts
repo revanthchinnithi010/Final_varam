@@ -71,6 +71,9 @@ export class AlertEngine {
   // In-memory dedup: prevent same alert firing twice within 10 s
   private recentlyFired: Map<number, number> = new Map();
 
+  // "enter" condition: suppress re-fire while price stays inside; reset on exit
+  private enterSuppressed: Set<number> = new Set();
+
   // ATR proximity: tracks whether price is currently inside the zone per trendline
   private atrProximityInZone: Map<number, boolean> = new Map();
   private atrCalculator: AtrCalculator;
@@ -277,14 +280,24 @@ export class AlertEngine {
       const cond = zone.condition;
       let shouldFire = false;
 
-      if (cond === "touch" || cond === "retest") {
+      if (cond === "enter") {
+        // Clear suppression when price exits the zone
+        if (currentState !== "inside") {
+          this.enterSuppressed.delete(id);
+        } else if (currentState === "inside" && lastState !== "inside" && !this.enterSuppressed.has(id)) {
+          // Price just entered from outside and we haven't already fired
+          this.enterSuppressed.add(id);
+          shouldFire = true;
+        }
+      } else if (cond === "touch" || cond === "retest") {
         shouldFire = currentState === "inside" && lastState !== "inside";
       } else if (cond === "break") {
         shouldFire = currentState !== "inside" && lastState === "inside";
       }
 
       if (shouldFire) {
-        await this.fireZoneAlert(zone, tick.price, currentState);
+        // "enter" keeps the zone alive so it can fire again on re-entry
+        await this.fireZoneAlert(zone, tick.price, currentState, cond === "enter");
       }
     }
   }
@@ -451,7 +464,7 @@ export class AlertEngine {
     }
   }
 
-  private async fireZoneAlert(zone: ZoneRow, triggeredPrice: number, state: ZoneState): Promise<void> {
+  private async fireZoneAlert(zone: ZoneRow, triggeredPrice: number, state: ZoneState, keepAlive = false): Promise<void> {
     // In-memory dedup: prevent same zone firing twice within 10 s
     const lastFired = this.recentlyFired.get(zone.id);
     if (lastFired && Date.now() - lastFired < 10_000) return;
@@ -466,11 +479,15 @@ export class AlertEngine {
         .set({ isTriggered: true, triggeredAt: new Date(), triggeredPrice, cooldownUntil })
         .where(eq(zonesTable.id, zone.id));
 
+      const message = zone.condition === "enter"
+        ? `Price has entered your monitored ${zone.zoneType.replace(/_/g, " ")} zone [${zone.lowerPrice}–${zone.upperPrice}]`
+        : `Price ${direction} ${zone.zoneType.replace(/_/g, " ")} zone [${zone.lowerPrice}–${zone.upperPrice}]`;
+
       await db.insert(alertEventsTable).values({
         alertId: zone.id, alertType: "zone",
         symbol: zone.symbol, condition: zone.condition,
         priceAtTrigger: triggeredPrice,
-        message: `Price ${direction} ${zone.zoneType.replace("_", " ")} zone [${zone.lowerPrice}–${zone.upperPrice}]`,
+        message,
       });
 
       this.wsManager.broadcast({
@@ -500,7 +517,9 @@ export class AlertEngine {
         });
       }
 
-      this.activeZones.delete(zone.id);
+      if (!keepAlive) {
+        this.activeZones.delete(zone.id);
+      }
     } catch (err) {
       logger.error({ err, zoneId: zone.id }, "AlertEngine: failed to fire zone alert");
     }

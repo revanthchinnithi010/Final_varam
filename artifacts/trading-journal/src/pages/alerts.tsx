@@ -397,7 +397,7 @@ export const CreateZoneAlertModal = memo(function CreateZoneAlertModal({
         </div>
         <FieldRow label="Alert Condition">
           <div className="flex gap-2">
-            {(["touch", "break", "retest"] as const).map(c => (
+            {(["enter", "touch", "break", "retest"] as const).map(c => (
               <AnimatedButton key={c} onClick={() => setForm(f => ({ ...f, condition: c }))}
                 className={cn(
                   "flex-1 py-2 rounded-lg text-xs font-semibold capitalize border transition-all",

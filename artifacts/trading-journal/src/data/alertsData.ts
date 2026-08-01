@@ -1,6 +1,6 @@
 export type AlertType = "price" | "zone" | "trendline";
 export type AlertStatus = "active" | "triggered" | "paused" | "expired";
-export type AlertCondition = "above" | "below" | "touch" | "break" | "retest";
+export type AlertCondition = "above" | "below" | "enter" | "touch" | "break" | "retest";
 export type ZoneType = "supply" | "demand" | "support_resistance" | "order_block";
 
 export interface PriceAlert {
