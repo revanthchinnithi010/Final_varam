@@ -629,10 +629,10 @@ export const Layout = memo(function Layout({
                 /* ── Desktop: hamburger opens nav drawer ── */
                 <button
                   onClick={openSidebar}
-                  className="w-9 h-9 flex items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 shrink-0"
+                  className="w-9 h-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-white transition-all duration-150 shrink-0"
                   style={{ border: "1px solid var(--surface-btn-border)" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--surface-btn-hover)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--surface-btn-hover)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--surface-btn-active-border)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.borderColor = "var(--surface-btn-border)"; }}
                 >
                   <Menu className="w-[17px] h-[17px]" />
                 </button>
