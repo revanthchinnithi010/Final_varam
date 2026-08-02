@@ -571,8 +571,12 @@ export const Layout = memo(function Layout({
             from bottom" artefact when switching between pages with different
             header visibility. No mount/unmount cycle means no flex-column push. */}
         <header
-          className="shrink-0 flex items-center justify-between px-4 z-30 gap-3"
+          className="shrink-0 px-4 z-30"
           style={{
+            display:             "grid",
+            gridTemplateColumns: "auto 1fr auto",
+            alignItems:          "center",
+            columnGap:           "12px",
             height:       headerVisible ? 60 : 0,
             overflow:     "hidden",
             position:     "relative",
@@ -642,72 +646,29 @@ export const Layout = memo(function Layout({
               </div>
             </div>
 
-            {/* ── Centre: REVANTH wordmark ───────────────────────────────────────
-                Absolutely positioned so it sits in the exact visual centre of the
-                header regardless of how wide the left or right columns are.
-                Rendered as inline SVG with a defined linearGradient so the gold
-                sheen is fully vector — crisp at any DPI / zoom level.             */}
-            <div
-              style={{
-                position:  "absolute",
-                left:      "50%",
-                top:       "50%",
-                transform: "translate(-50%, -50%)",
-                pointerEvents: "none",
-                userSelect: "none",
-                lineHeight: 1,
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 260 36"
-                width="260"
-                height="36"
-                aria-label="REVANTH"
-                role="img"
-                style={{ display: "block", overflow: "visible" }}
+            {/* Centre: REVANTH wordmark — sits in the 1fr grid column, perfectly centred */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <span
+                style={{
+                  fontFamily:    "'Inter', system-ui, sans-serif",
+                  fontSize:      "11px",
+                  fontWeight:    300,
+                  letterSpacing: "0.5em",
+                  paddingLeft:   "0.5em",
+                  color:         "rgba(255,255,255,0.9)",
+                  textTransform: "uppercase",
+                  lineHeight:    1,
+                  userSelect:    "none",
+                }}
               >
-                <defs>
-                  {/* Metallic gold gradient: deep gold → bright cream → warm gold */}
-                  <linearGradient id="revanthGold" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%"   stopColor="#F0C040" />
-                    <stop offset="30%"  stopColor="#FDE68A" />
-                    <stop offset="55%"  stopColor="#FFFBEB" />
-                    <stop offset="80%"  stopColor="#F5C03A" />
-                    <stop offset="100%" stopColor="#B8860B" />
-                  </linearGradient>
-                  {/* Soft glow filter */}
-                  <filter id="revanthGlow" x="-20%" y="-40%" width="140%" height="180%">
-                    <feGaussianBlur stdDeviation="2.5" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                <text
-                  x="50%"
-                  y="28"
-                  textAnchor="middle"
-                  fill="url(#revanthGold)"
-                  filter="url(#revanthGlow)"
-                  style={{
-                    fontFamily:    "'Cinzel Decorative', 'Trajan Pro', 'Times New Roman', serif",
-                    fontSize:      "22px",
-                    fontWeight:    900,
-                    letterSpacing: "0.22em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  REVANTH
-                </text>
-              </svg>
+                REVANTH
+              </span>
             </div>
 
             {/* Right: Search (desktop only) + Theme Toggle (desktop only) + Currency
                 + Bell + Profile. Search used to occupy the header's center column;
                 that column is now empty, so search moved here as a compact field. */}
-            <div className="flex items-center gap-2 shrink-0 z-10">
+            <div className="flex items-center gap-2 shrink-0">
               {!isMobile && (
                 <div className="relative hidden lg:block w-40 xl:w-48">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60" />
