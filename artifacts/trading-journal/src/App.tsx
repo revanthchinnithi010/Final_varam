@@ -47,6 +47,7 @@ const Trade            = lazy(() => import("@/pages/trade"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
 const CtraderTest        = lazy(() => import("@/pages/ctrader-test"));
 const CtraderIntegration = lazy(() => import("@/pages/ctrader-integration"));
+const DeltaIntegration   = lazy(() => import("@/pages/delta-integration"));
 // Kept lazy — imports Recharts; start immediately so it's ready before navigation.
 const _pPnlAnalytics  = import("@/pages/pnl-analytics");
 const _pPositionDetail = import("@/pages/position-detail");
@@ -392,6 +393,7 @@ const APP_NO_HEADER_PATHS = new Set([
   "/pnl",                   // keep-alive full-viewport UI
   "/trades",                // has its own secondary header
   "/ctrader-integration",   // full-screen detail page with its own custom header
+  "/delta-integration",     // full-screen detail page with its own custom header
 ]);
 
 /**
@@ -420,7 +422,7 @@ const KNOWN_PATHS = new Set([
   "/calendar", "/notebook", "/settings",
   "/calc/crypto", "/calc/forex", "/calc/position", "/calc/margin", "/calc/risk",
   "/portfolio", "/balances", "/pnl", "/net-pnl", "/trade", "/ctrader-test", "/charts",
-  "/position-detail", "/ctrader-integration",
+  "/position-detail", "/ctrader-integration", "/delta-integration",
 ]);
 
 /**
@@ -501,6 +503,56 @@ function PositionDetailWrapper() {
         <PositionDetail />
       </div>
     </>
+  );
+}
+
+/**
+ * DeltaIntegrationOverlay — full-screen compositor-animated overlay.
+ *
+ * Mirrors CtraderIntegrationOverlay / NotificationPanel exactly:
+ *   Open:  translateX(100%) → translateX(0)   230ms cubic-bezier(0.22,1,0.36,1)
+ *   Close: translateX(0)    → translateX(100%) 210ms cubic-bezier(0.4,0,0.6,1)
+ *
+ * Always mounted once first opened; `open` controls visibility only.
+ * z-index 70 — same as NotificationPanel, above MobileBottomNav (60).
+ */
+function DeltaIntegrationOverlay({ open }: { open: boolean }) {
+  const hasOpenedRef = useRef(false);
+  if (open) hasOpenedRef.current = true;
+
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (open) {
+      let rafId: number;
+      const timerId = setTimeout(() => {
+        rafId = requestAnimationFrame(() => setVisible(true));
+      }, 0);
+      return () => { clearTimeout(timerId); cancelAnimationFrame(rafId); };
+    } else {
+      setVisible(false);
+    }
+  }, [open]);
+
+  if (!hasOpenedRef.current) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <div
+        style={{
+          position:      "fixed",
+          inset:         0,
+          zIndex:        70,
+          pointerEvents: open ? "auto" : "none",
+          background:    "#000000",
+          transform:     visible ? "translate3d(0,0,0)" : "translate3d(100%,0,0)",
+          transition:    `transform ${visible ? CTRADER_DUR_OPEN : CTRADER_DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
+          willChange:    "transform",
+        }}
+        className="transform-gpu"
+      >
+        <DeltaIntegration />
+      </div>
+    </Suspense>
   );
 }
 
@@ -825,6 +877,9 @@ function Router() {
            Always-mounted once first visited; open/close driven by URL only.
            z-index 70 (same as NotificationPanel) — above MobileBottomNav (60). */}
       <CtraderIntegrationOverlay open={pathname === "/ctrader-integration"} />
+
+      {/* ── Delta integration — same compositor translateX slide as cTrader. */}
+      <DeltaIntegrationOverlay open={pathname === "/delta-integration"} />
     </Layout>
   );
 }
