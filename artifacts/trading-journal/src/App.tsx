@@ -14,7 +14,7 @@ import { LiveMarketProvider } from "@/contexts/LiveMarketContext";
 import { WatchlistProvider } from "@/contexts/WatchlistContext";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import { motion, AnimatePresence } from "motion/react";
-import { COMPOSITOR_EASE, COMPOSITOR_OVERLAY_DURATION_OPEN, COMPOSITOR_OVERLAY_DURATION_ENTER_TRANSFORM } from "@/animations/motion";
+import { COMPOSITOR_EASE, COMPOSITOR_EASE_CLOSE, COMPOSITOR_OVERLAY_DURATION_OPEN, COMPOSITOR_OVERLAY_DURATION_ENTER_TRANSFORM } from "@/animations/motion";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { SplashScreen } from "@/components/animations/SplashScreen";
 import { getSymbolBreakdown, getGetSymbolBreakdownQueryKey } from "@workspace/api-client-react";
@@ -504,6 +504,65 @@ function PositionDetailWrapper() {
   );
 }
 
+/**
+ * CtraderIntegrationOverlay — full-screen compositor-animated overlay.
+ *
+ * Mirrors NotificationPanel / ProfilePage sub-pages exactly:
+ *   Open:  translateX(100%) → translateX(0)   230ms cubic-bezier(0.22,1,0.36,1)
+ *   Close: translateX(0)    → translateX(100%) 210ms cubic-bezier(0.4,0,0.6,1)
+ *
+ * Always mounted once first opened; `open` controls visibility only.
+ * z-index 70 — same as NotificationPanel, above MobileBottomNav (60).
+ */
+const CTRADER_DUR_OPEN  = 230; // ms — matches NotificationPanel / ProfilePage
+const CTRADER_DUR_CLOSE = 210; // ms — matches NotificationPanel / ProfilePage
+
+function CtraderIntegrationOverlay({ open }: { open: boolean }) {
+  const hasOpenedRef = useRef(false);
+  if (open) hasOpenedRef.current = true;
+
+  /* `visible` drives the CSS transition — same double-rAF pattern as
+     NotificationPanel: setTimeout(0) pushes past React's commit so the
+     browser paints the closed position (translateX(100%)) before we flip
+     to the open position, guaranteeing the slide-in fires every tap. */
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (open) {
+      let rafId: number;
+      const timerId = setTimeout(() => {
+        rafId = requestAnimationFrame(() => setVisible(true));
+      }, 0);
+      return () => { clearTimeout(timerId); cancelAnimationFrame(rafId); };
+    } else {
+      setVisible(false);
+    }
+  }, [open]);
+
+  /* Never mount until first opened — keeps idle memory clean. After that
+     the overlay stays mounted so re-opening never re-mounts CtraderWidget. */
+  if (!hasOpenedRef.current) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <div
+        style={{
+          position:     "fixed",
+          inset:        0,
+          zIndex:       70,
+          pointerEvents: open ? "auto" : "none",
+          background:   "#000000",
+          transform:    visible ? "translate3d(0,0,0)" : "translate3d(100%,0,0)",
+          transition:   `transform ${visible ? CTRADER_DUR_OPEN : CTRADER_DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
+          willChange:   "transform",
+        }}
+        className="transform-gpu"
+      >
+        <CtraderIntegration />
+      </div>
+    </Suspense>
+  );
+}
+
 function Router() {
   const [location] = useLocation();
   const isMobile   = useIsMobile();
@@ -743,7 +802,6 @@ function Router() {
         {pathname === "/calc/risk"     && <Suspense key="/calc/risk"     fallback={<PageLoader />}><PageTransition key="/calc/risk"    custom={dir}><StandardPageWrapper bottomPad={bp} pathname="/calc/risk"><CalcRisk    /></StandardPageWrapper></PageTransition></Suspense>}
         {pathname === "/trade"         && <Suspense key="/trade"         fallback={<PageLoader />}><PageTransition key="/trade"        custom={dir}><StandardPageWrapper bottomPad={bp} pathname="/trade"><Trade       /></StandardPageWrapper></PageTransition></Suspense>}
         {pathname === "/ctrader-test"         && <Suspense key="/ctrader-test"         fallback={<PageLoader />}><PageTransition key="/ctrader-test"         custom={dir}><StandardPageWrapper bottomPad={bp} pathname="/ctrader-test"><CtraderTest /></StandardPageWrapper></PageTransition></Suspense>}
-        {pathname === "/ctrader-integration"  && <Suspense key="/ctrader-integration"  fallback={<PageLoader />}><PageTransition key="/ctrader-integration"  custom={dir}><CtraderIntegration /></PageTransition></Suspense>}
 
         {/* ── 404 ── */}
         {!KNOWN_PATHS.has(pathname)    && <Suspense key="not-found" fallback={<PageLoader />}><PageTransition key="not-found"  custom={dir}><StandardPageWrapper bottomPad={bp} pathname="not-found"><NotFound    /></StandardPageWrapper></PageTransition></Suspense>}
@@ -762,6 +820,11 @@ function Router() {
       {/* ── Cover-scale pages — CSS compositor animation, outside AnimatePresence ── */}
       {/* /pnl is a keep-alive node (PNL_NODE) rendered in Layout — not here */}
       {pathname === "/position-detail"  && <Suspense fallback={null}><PositionDetailWrapper /></Suspense>}
+
+      {/* ── cTrader integration — compositor translateX slide (mirrors NotificationPanel).
+           Always-mounted once first visited; open/close driven by URL only.
+           z-index 70 (same as NotificationPanel) — above MobileBottomNav (60). */}
+      <CtraderIntegrationOverlay open={pathname === "/ctrader-integration"} />
     </Layout>
   );
 }
