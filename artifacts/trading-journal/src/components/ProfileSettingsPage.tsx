@@ -86,7 +86,7 @@ function SectionLabel({ children, first }: { children: React.ReactNode; first?: 
 /* ─── Divider ───────────────────────────────────────────────────────────────── */
 
 const ROW_HEIGHT  = 72;
-const ICON_SIZE   = 52;
+const ICON_SIZE   = 48;
 const ROW_GAP     = 16;
 const ROW_PADDING = 24;
 const DIVIDER_INSET = ROW_PADDING + ICON_SIZE + ROW_GAP; // aligns with title start
