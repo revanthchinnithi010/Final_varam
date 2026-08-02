@@ -416,10 +416,10 @@ const APP_KEEP_ALIVE_PATHS = new Set(["/", "/charts", "/reports", "/pnl", "/mark
  */
 const APP_COVER_DETAIL_PATHS = new Set([
   "/portfolio", "/balances", "/net-pnl",
-  // Compositor-slide overlays (position:fixed z:70) — same immediate-update
+  // Compositor-slide overlays (position:fixed z:55+) — same immediate-update
   // rule as cover-detail: the overlay is still sliding off-screen during the
   // 210ms close animation, so updating the header immediately is safe.
-  "/ctrader-integration", "/delta-integration",
+  "/position-detail", "/ctrader-integration", "/delta-integration",
 ]);
 
 // Known pathnames — used to decide whether to render NotFound.
@@ -442,73 +442,52 @@ const KNOWN_PATHS = new Set([
 const TAB_ORDER: string[] = ["/", "/markets", "/charts", "/trades", "/alerts"];
 
 /**
- * PositionDetailWrapper — GPU compositor-thread slide-up entrance.
+ * PositionDetailWrapper — GPU compositor-thread slide-from-right entrance.
  *
- * WHY NOT CLIP-PATH + FRAMER MOTION (previous approach):
- *   clip-path forces software rasterization on every frame — not composited.
- *   Framer Motion's animate() is JS-driven (RAF callbacks on the main thread),
- *   so the chart tick engine can block it mid-animation, causing visible stutter.
+ * Open:  translateX(100%) → translateX(0)   230ms cubic-bezier(0.22,1,0.36,1)
+ * Close: translateX(0)    → translateX(100%) 210ms cubic-bezier(0.4,0,0.6,1)
  *
- * THIS APPROACH:
- *   Pure CSS transition on `opacity` + `transform` only — both run on the GPU
- *   compositor thread, completely independent of JavaScript.
- *   The same setTimeout(0)+RAF pattern used by ProfilePage / sub-pages ensures
- *   the browser paints the closed state (translateY+scale+opacity:0) before the
- *   transition target is applied — guaranteeing the animation fires every tap.
- *
- *   Enter: translateY(56px) scale(0.97) opacity(0) → identity
- *          340ms cubic-bezier(0.22,1,0.36,1) [transform] · 240ms [opacity]
- *
- *   zIndex 55 — above Portfolio/Balances/NetPnl cover-detail pages (50).
- *   A solid backdrop div at zIndex 54 covers those pages from frame 0 so
- *   nothing below bleeds through during the opacity ramp.
+ * Mirrors DeltaIntegrationOverlay / CtraderIntegrationOverlay exactly.
+ * Always-mounted once first opened; `open` prop drives open/close.
+ * zIndex 55 — above Portfolio/Balances/NetPnl cover-detail pages (50).
  */
-function PositionDetailWrapper() {
-  const [visible, setVisible] = useState(false);
-  const prefersReduced =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function PositionDetailWrapper({ open }: { open: boolean }) {
+  const hasOpenedRef = useRef(false);
+  if (open) hasOpenedRef.current = true;
 
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
-    if (prefersReduced) { setVisible(true); return; }
-    // setTimeout(0) pushes past React's commit + pending microtasks so the
-    // browser paints frame 0 (closed state) before we flip to the open state.
-    // The single RAF then synchronises with the next paint cycle.
-    let rafId: number;
-    const timerId = setTimeout(() => {
-      rafId = requestAnimationFrame(() => setVisible(true));
-    }, 0);
-    return () => { clearTimeout(timerId); cancelAnimationFrame(rafId); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (open) {
+      let rafId: number;
+      const timerId = setTimeout(() => {
+        rafId = requestAnimationFrame(() => setVisible(true));
+      }, 0);
+      return () => { clearTimeout(timerId); cancelAnimationFrame(rafId); };
+    } else {
+      setVisible(false);
+    }
+  }, [open]);
+
+  if (!hasOpenedRef.current) return null;
 
   return (
-    <>
-      {/* Solid backdrop — covers Portfolio / Balances / any z:50 layer
-          from the very first frame so nothing bleeds through the opacity ramp */}
-      <div style={{ position: "fixed", inset: 0, zIndex: 54, background: "#000000" }} />
-
-      {/* Animated panel — opacity + transform only (compositor thread) */}
-      <div
-        style={{
-          position:                 "fixed",
-          inset:                    0,
-          zIndex:                   55,
-          background:               "#000000",
-          opacity:                  visible ? 1 : 0,
-          transform:                visible
-            ? "translate3d(0,0,0) scale(1)"
-            : "translate3d(0,56px,0) scale(0.97)",
-          transition:               visible
-            ? `opacity ${COMPOSITOR_OVERLAY_DURATION_OPEN} ${COMPOSITOR_EASE}, transform ${COMPOSITOR_OVERLAY_DURATION_ENTER_TRANSFORM} ${COMPOSITOR_EASE}`
-            : "none",
-          willChange:               "transform, opacity",
-          backfaceVisibility:       "hidden",
-          WebkitBackfaceVisibility: "hidden",
-        }}
-      >
+    <div
+      style={{
+        position:      "fixed",
+        inset:         0,
+        zIndex:        55,
+        pointerEvents: open ? "auto" : "none",
+        background:    "#000000",
+        transform:     visible ? "translate3d(0,0,0)" : "translate3d(100%,0,0)",
+        transition:    `transform ${visible ? CTRADER_DUR_OPEN : CTRADER_DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
+        willChange:    "transform",
+      }}
+      className="transform-gpu"
+    >
+      <Suspense fallback={null}>
         <PositionDetail />
-      </div>
-    </>
+      </Suspense>
+    </div>
   );
 }
 
@@ -877,7 +856,7 @@ function Router() {
 
       {/* ── Cover-scale pages — CSS compositor animation, outside AnimatePresence ── */}
       {/* /pnl is a keep-alive node (PNL_NODE) rendered in Layout — not here */}
-      {pathname === "/position-detail"  && <Suspense fallback={null}><PositionDetailWrapper /></Suspense>}
+      <PositionDetailWrapper open={pathname === "/position-detail"} />
 
       {/* ── cTrader integration — compositor translateX slide (mirrors NotificationPanel).
            Always-mounted once first visited; open/close driven by URL only.
