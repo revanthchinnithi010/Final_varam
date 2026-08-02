@@ -54,6 +54,7 @@ import { useChartStore, type ChartType, type OHLCBar } from "@/store/chartStore"
 import { useDrawingStore } from "@/store/drawingStore";
 import { useAlertStore } from "@/store/alertStore";
 import { chartApiRef } from "@/lib/chartApiRef";
+import { playNotificationSound as playAlertSound } from "@/lib/notificationManager";
 import type { Drawing } from "@/types/drawing";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNamedLayouts, type NamedLayout } from "@/hooks/useNamedLayouts";
@@ -277,28 +278,6 @@ const ReplaySelector = memo(function ReplaySelector({
     </div>
   );
 });
-
-// ── Web Audio alert sound ─────────────────────────────────────────────────────
-function playAlertSound(type: "up" | "down" | "neutral" = "neutral") {
-  try {
-    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    const freqs = type === "up" ? [523.25, 659.25, 783.99]
-      : type === "down" ? [783.99, 659.25, 523.25]
-      : [659.25, 783.99];
-    let time = ctx.currentTime;
-    for (const freq of freqs) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = "sine"; osc.frequency.setValueAtTime(freq, time);
-      gain.gain.setValueAtTime(0, time);
-      gain.gain.linearRampToValueAtTime(0.18, time + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
-      osc.start(time); osc.stop(time + 0.2); time += 0.12;
-    }
-    setTimeout(() => ctx.close(), 1000);
-  } catch { /* audio not supported */ }
-}
 
 // ── Symbol metadata helpers ───────────────────────────────────────────────────
 function getEntry(key: string, watchlist: WatchlistEntry[]): WatchlistEntry {
