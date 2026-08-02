@@ -639,22 +639,6 @@ export const Layout = memo(function Layout({
               )}
 
               <div className="flex flex-col items-start justify-center min-w-0">
-                <span
-                  className="truncate"
-                  style={{
-                    marginTop:     2,
-                    marginLeft:    7,
-                    fontFamily:    "'Dancing Script', 'Brush Script MT', cursive",
-                    fontSize:      11.3,
-                    fontWeight:    400,
-                    fontStyle:     "italic",
-                    letterSpacing: "0px",
-                    lineHeight:    "12.4px",
-                    color:         theme === "light" ? "rgba(107,114,128,0.60)" : "rgba(255,255,255,0.45)",
-                  }}
-                >
-                  by Revanth chinnithi
-                </span>
               </div>
             </div>
 
