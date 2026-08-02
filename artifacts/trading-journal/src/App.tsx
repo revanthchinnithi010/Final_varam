@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
+import { useRepeatEngine } from "@/hooks/useRepeatEngine";
 import { LiveMarketProvider } from "@/contexts/LiveMarketContext";
 import { WatchlistProvider } from "@/contexts/WatchlistContext";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
@@ -504,6 +505,12 @@ function PositionDetailWrapper() {
 function Router() {
   const [location] = useLocation();
   const isMobile   = useIsMobile();
+
+  // Mount the repeat scheduler — watches alert events and manages follow-up
+  // notifications + sounds for all three repeat modes (three_reminders,
+  // repeat_until_dismissed, triple_ring). Placed here so it is always active
+  // regardless of which page is open.
+  useRepeatEngine();
 
   useEffect(() => {
     // Prefetch Reports' one unique query (stats/equity/weekly are already

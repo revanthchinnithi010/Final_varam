@@ -25,7 +25,7 @@ import {
 } from "@/pages/alerts";
 import { Input } from "@/components/ui/input";
 import { AnimatedButton } from "@/components/animations";
-import type { PriceAlert, ZoneAlert, TrendlineAlert } from "@/data/alertsData";
+import type { PriceAlert, ZoneAlert, TrendlineAlert, RepeatMode } from "@/data/alertsData";
 import { TIMEFRAMES, SYMBOLS } from "@/data/alertsData";
 import {
   COMPOSITOR_EASE,
@@ -371,6 +371,7 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
     timeframe: intervalToHumanTf(useChartStore.getState().interval),
     condition: "above" as "above" | "below" | "touch",
     targetPrice: "", notes: "", expiry: "",
+    repeatMode: "three_reminders" as RepeatMode,
   });
 
   // Sync symbol and timeframe each time the screen opens.
@@ -402,6 +403,7 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
         currentPrice: 0, notes: form.notes,
         status: "active", expiry: form.expiry || null,
         createdAt: new Date().toISOString(), triggeredAt: null,
+        repeatMode: form.repeatMode,
       });
       toast.success("Price Alert Created Successfully", {
         description: `${form.symbol} · ${form.condition} · ${form.targetPrice}`,
@@ -533,6 +535,29 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
               </div>
             </FieldRow>
 
+            {/* ── Repeat ── */}
+            <FieldRow label="Repeat">
+              <div className="flex gap-2">
+                {([
+                  { value: "three_reminders",        label: "Three Reminders" },
+                  { value: "repeat_until_dismissed",  label: "Repeat Until Dismissed" },
+                  { value: "triple_ring",             label: "Triple Ring" },
+                ] as const).map(({ value, label }) => (
+                  <AnimatedButton
+                    key={value}
+                    onClick={() => setForm(f => ({ ...f, repeatMode: value }))}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-[10px] font-semibold border transition-all leading-tight text-center",
+                      form.repeatMode === value
+                        ? "bg-primary/20 border-primary/40 text-primary"
+                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                    )}>
+                    {label}
+                  </AnimatedButton>
+                ))}
+              </div>
+            </FieldRow>
+
             {/* Target Price */}
             <FieldRow label="Target Price">
               <Input type="number" placeholder="e.g. 18750" value={form.targetPrice}
@@ -611,6 +636,7 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
     symbol: symbol ?? "NAS100", zoneType: "supply" as ZoneAlert["zoneType"],
     upperPrice: "", lowerPrice: "", timeframe: chartHumanTf,
     condition: "touch" as ZoneAlert["condition"], notes: "",
+    repeatMode: "three_reminders" as RepeatMode,
   });
 
   // Sync symbol and timeframe each time the screen opens.
@@ -684,6 +710,7 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
         timeframe: form.timeframe, condition: form.condition,
         notes: form.notes, status: "active",
         createdAt: new Date().toISOString(), triggeredAt: null,
+        repeatMode: form.repeatMode,
       });
       toast.success("Zone Alert Created Successfully", {
         description: `${form.symbol} · ${form.timeframe} · ${form.condition}`,
@@ -961,6 +988,29 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
               </div>
             </FieldRow>
 
+            {/* ── Repeat ── */}
+            <FieldRow label="Repeat">
+              <div className="flex gap-2">
+                {([
+                  { value: "three_reminders",        label: "Three Reminders" },
+                  { value: "repeat_until_dismissed",  label: "Repeat Until Dismissed" },
+                  { value: "triple_ring",             label: "Triple Ring" },
+                ] as const).map(({ value, label }) => (
+                  <AnimatedButton
+                    key={value}
+                    onClick={() => setForm(f => ({ ...f, repeatMode: value }))}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-[10px] font-semibold border transition-all leading-tight text-center",
+                      form.repeatMode === value
+                        ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
+                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                    )}>
+                    {label}
+                  </AnimatedButton>
+                ))}
+              </div>
+            </FieldRow>
+
             {/* ── OR ENTER MANUALLY collapsible ── */}
             <div>
               <button
@@ -1099,6 +1149,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
       notes:        "",
       atrPeriod:    14,
       atrMultiplier: 0.15,
+      repeatMode:   "three_reminders" as RepeatMode,
     };
   });
 
@@ -1208,6 +1259,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
         condition: form.condition, notes: form.notes,
         atrPeriod: form.atrPeriod, atrMultiplier: form.atrMultiplier,
         status: "active", createdAt: new Date().toISOString(), triggeredAt: null,
+        repeatMode: form.repeatMode,
       });
       // ATR proximity alerts also need backend evaluation — persist to API
       if (form.condition === "atr_proximity") {
@@ -1501,7 +1553,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
               />
             </FieldRow>
 
-            {/* Condition */}
+            {/* ── Trendline Alert Condition ── */}
             <FieldRow label="Alert Condition">
               <div className="space-y-3">
                 {/* Three condition pills */}
@@ -1594,6 +1646,29 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
                     </motion.div>
                   )}
                 </AnimatePresence>
+              </div>
+            </FieldRow>
+
+            {/* ── Repeat ── */}
+            <FieldRow label="Repeat">
+              <div className="flex gap-2">
+                {([
+                  { value: "three_reminders",        label: "Three Reminders" },
+                  { value: "repeat_until_dismissed",  label: "Repeat Until Dismissed" },
+                  { value: "triple_ring",             label: "Triple Ring" },
+                ] as const).map(({ value, label }) => (
+                  <AnimatedButton
+                    key={value}
+                    onClick={() => setForm(f => ({ ...f, repeatMode: value }))}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-[10px] font-semibold border transition-all leading-tight text-center",
+                      form.repeatMode === value
+                        ? "bg-primary/20 border-primary/40 text-primary"
+                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
+                    )}>
+                    {label}
+                  </AnimatedButton>
+                ))}
               </div>
             </FieldRow>
 

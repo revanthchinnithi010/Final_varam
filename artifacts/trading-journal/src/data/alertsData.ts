@@ -3,6 +3,14 @@ export type AlertStatus = "active" | "triggered" | "paused" | "expired";
 export type AlertCondition = "above" | "below" | "enter" | "touch" | "break" | "retest";
 export type ZoneType = "supply" | "demand" | "support_resistance" | "order_block";
 
+/**
+ * Repeat mode for an alert — controls what happens after the alert triggers.
+ *   three_reminders        — 3 total notifications (+5 min, +10 min), then auto-delete
+ *   repeat_until_dismissed — repeats every 10 min until user deletes/disables the alert
+ *   triple_ring            — one notification + 3 alert sounds with 1 s pauses; stays active
+ */
+export type RepeatMode = "three_reminders" | "repeat_until_dismissed" | "triple_ring";
+
 export interface PriceAlert {
   id: string;
   type: "price";
@@ -16,6 +24,7 @@ export interface PriceAlert {
   expiry: string | null;
   createdAt: string;
   triggeredAt: string | null;
+  repeatMode?: RepeatMode;
 }
 
 export interface ZoneAlert {
@@ -31,6 +40,7 @@ export interface ZoneAlert {
   status: AlertStatus;
   createdAt: string;
   triggeredAt: string | null;
+  repeatMode?: RepeatMode;
 }
 
 export interface TrendlineAlert {
@@ -51,6 +61,7 @@ export interface TrendlineAlert {
   status: AlertStatus;
   createdAt: string;
   triggeredAt: string | null;
+  repeatMode?: RepeatMode;
 }
 
 export type AnyAlert = PriceAlert | ZoneAlert | TrendlineAlert;
