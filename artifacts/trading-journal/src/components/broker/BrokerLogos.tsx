@@ -17,20 +17,27 @@ export function BrokerLogo({ brokerId, size = 32, className }: BrokerLogoProps) 
     minHeight: size,
   };
 
+  // Delta and cTrader icons are rendered in black & white (monochrome).
+  const mono = broker.id === "delta" || broker.id === "ctrader";
+
   if (broker.image) {
     return (
       <img
         src={broker.image}
         alt={broker.name}
-        style={style}
+        style={{
+          ...style,
+          ...(mono ? { filter: "grayscale(1) brightness(1.6)" } : {}),
+        }}
         className={className}
         onError={(e) => {
           const target = e.currentTarget as HTMLImageElement;
           target.style.display = "none";
           const parent = target.parentElement;
           if (parent) {
+            const bg = mono ? "rgba(255,255,255,0.12)" : broker.color;
             const fallback = document.createElement("div");
-            fallback.style.cssText = `width:${size}px;height:${size}px;border-radius:6px;background:${broker.color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${Math.round(size * 0.38)}px;color:#fff;flex-shrink:0;`;
+            fallback.style.cssText = `width:${size}px;height:${size}px;border-radius:6px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${Math.round(size * 0.38)}px;color:#fff;flex-shrink:0;`;
             fallback.textContent = broker.logo;
             parent.appendChild(fallback);
           }
@@ -44,7 +51,7 @@ export function BrokerLogo({ brokerId, size = 32, className }: BrokerLogoProps) 
       style={{
         ...style,
         borderRadius: Math.round(size * 0.2),
-        background: broker.color,
+        background: mono ? "rgba(255,255,255,0.12)" : broker.color,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

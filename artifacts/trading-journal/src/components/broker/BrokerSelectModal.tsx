@@ -80,20 +80,25 @@ export function BrokerListContent({ onClose, onConnectBroker }: BrokerListConten
               padding: "14px 14px",
               minWidth: 0,
             }}>
-              {/* Logo */}
-              <div style={{
-                width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                background: broker.image ? "transparent" : broker.color + "22",
-                color: broker.color, fontSize: 16, fontWeight: 900,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                overflow: "hidden",
-                boxShadow: isConnected ? `0 0 14px ${broker.color}30` : "none",
-                transition: "box-shadow 0.3s",
-              }}>
-                {broker.image
-                  ? <img src={broker.image} alt={broker.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : broker.logo}
-              </div>
+              {/* Logo — delta & ctrader rendered monochrome */}
+              {(() => {
+                const mono = broker.id === "delta" || broker.id === "ctrader";
+                return (
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                    background: broker.image ? "transparent" : mono ? "rgba(255,255,255,0.12)" : broker.color + "22",
+                    color: mono ? "#fff" : broker.color, fontSize: 16, fontWeight: 900,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    overflow: "hidden",
+                    boxShadow: isConnected ? `0 0 14px ${mono ? "rgba(255,255,255,0.15)" : broker.color + "30"}` : "none",
+                    transition: "box-shadow 0.3s",
+                  }}>
+                    {broker.image
+                      ? <img src={broker.image} alt={broker.name} style={{ width: "100%", height: "100%", objectFit: "cover", ...(mono ? { filter: "grayscale(1) brightness(1.6)" } : {}) }} />
+                      : broker.logo}
+                  </div>
+                );
+              })()}
 
               {/* Name + description + status */}
               <div style={{ flex: 1, minWidth: 0 }}>

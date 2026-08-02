@@ -958,7 +958,7 @@ const Dashboard = memo(function Dashboard() {
             className="w-16 h-16 rounded-full flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.08)" }}
           >
-            <img src={deltaLogoUrl} alt="Delta Exchange" style={{ width: 38, height: 38, objectFit: "contain" }} />
+            <img src={deltaLogoUrl} alt="Delta Exchange" style={{ width: 38, height: 38, objectFit: "contain", filter: "grayscale(1) brightness(1.6)" }} />
           </div>
           <span className="text-[12px] font-semibold text-white/60">Delta</span>
         </motion.button>

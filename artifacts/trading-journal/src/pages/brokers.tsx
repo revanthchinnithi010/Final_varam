@@ -781,7 +781,7 @@ export default function Brokers() {
           lastSync="Never"
           tradesCount={0}
           accentColor="transparent"
-          icon={<span style={{ fontSize: 20, fontWeight: 900, color: "#a78bfa" }}>cT</span>}
+          icon={<span style={{ fontSize: 20, fontWeight: 900, color: "#ffffff" }}>cT</span>}
           onSelect={() => setActiveTab("ctrader")}
           onToggleConnect={() => setActiveTab("ctrader")}
         />
