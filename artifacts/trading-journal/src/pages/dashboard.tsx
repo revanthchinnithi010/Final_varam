@@ -942,7 +942,7 @@ const Dashboard = memo(function Dashboard() {
             className="w-16 h-16 rounded-full flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.08)" }}
           >
-            <img src={fusionLogoUrl} alt="cTrader" style={{ width: 38, height: 38, objectFit: "contain" }} />
+            <span style={{ fontSize: 22, fontWeight: 900, color: "#ffffff", letterSpacing: "-0.5px" }}>cT</span>
           </div>
           <span className="text-[12px] font-semibold text-white/60">cTrader</span>
         </motion.button>
