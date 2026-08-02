@@ -184,14 +184,14 @@ const DashboardMarketsOverlay = memo(function DashboardMarketsOverlay({
       aria-hidden={!open}
       style={{ position: "fixed", inset: 0, zIndex: 90, pointerEvents: open ? "auto" : "none" }}
     >
-      {/* Full-screen panel — slides up from bottom */}
+      {/* Full-screen panel — slides in from right */}
       <div
         className="transform-gpu"
         style={{
           position: "absolute", inset: 0,
           display: "flex", flexDirection: "column",
           background: "#000000",
-          transform: visible ? "translateY(0)" : "translateY(100%)",
+          transform: visible ? "translateX(0)" : "translateX(100%)",
           transition: `transform ${visible ? DUR_OPEN : DUR_CLOSE}ms ${visible ? EASE_OPEN : EASE_CLOSE}`,
           willChange: "transform",
           overflow: "hidden",
