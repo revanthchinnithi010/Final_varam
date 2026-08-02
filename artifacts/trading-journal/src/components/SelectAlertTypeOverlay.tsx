@@ -2153,6 +2153,15 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
   type Modal = "price" | "zone" | "trendline" | null;
   const [activeModal, setActiveModal] = useState<Modal>(null);
 
+  // Wraps the outer onCloseAll so that activeModal is cleared first.
+  // Without this, the create screens (Trendline/Zone/Price) stay mounted and
+  // visible after the parent overlays animate away, because their `open` prop
+  // is driven by activeModal — not by the outer SelectAlertTypeOverlay open state.
+  const handleCloseAll = useCallback(() => {
+    setActiveModal(null);
+    onCloseAll?.();
+  }, [onCloseAll]);
+
   const handlePriceAlertSave     = useCallback((a: PriceAlert)     => { addAlert(a); setActiveModal(null); onCloseRef.current(); }, [addAlert]);
   const handleZoneAlertSave      = useCallback((a: ZoneAlert)      => { addAlert(a); setActiveModal(null); onCloseRef.current(); }, [addAlert]);
   const handleTrendlineAlertSave = useCallback((a: TrendlineAlert) => { addAlert(a); setActiveModal(null); onCloseRef.current(); }, [addAlert]);
@@ -2246,7 +2255,7 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         symbol={symbol}
         onClose={() => setActiveModal(null)}
         onSave={handleTrendlineAlertSave}
-        onCloseAll={onCloseAll}
+        onCloseAll={handleCloseAll}
       />
 
       {/* Zone — full-screen slide-in screen */}
@@ -2255,7 +2264,7 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         symbol={symbol}
         onClose={() => setActiveModal(null)}
         onSave={handleZoneAlertSave}
-        onCloseAll={onCloseAll}
+        onCloseAll={handleCloseAll}
       />
       {/* Price — full-screen slide-in screen */}
       <PriceAlertScreen
@@ -2263,7 +2272,7 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         symbol={symbol}
         onClose={() => setActiveModal(null)}
         onSave={handlePriceAlertSave}
-        onCloseAll={onCloseAll}
+        onCloseAll={handleCloseAll}
       />
     </>,
     document.body,
