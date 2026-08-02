@@ -960,7 +960,7 @@ const Dashboard = memo(function Dashboard() {
           >
             <img src={deltaLogoUrl} alt="Delta Exchange" style={{ width: 38, height: 38, objectFit: "contain" }} />
           </div>
-          <span className="text-[12px] font-semibold text-white/60">Delta Exchange</span>
+          <span className="text-[12px] font-semibold text-white/60">Delta</span>
         </motion.button>
       </div>
 
