@@ -105,8 +105,11 @@ const SCROLL_STYLE: React.CSSProperties = {
   overflowY: "auto",
   // Smooth momentum scrolling on iOS
   WebkitOverflowScrolling: "touch",
-  // Prevent scroll from propagating to the page behind the sheet
-  overscrollBehavior: "contain",
+  // Pre-promote to compositor so rubber-band overscroll runs at full 60 fps.
+  // overscroll-behavior:contain is intentionally omitted — the fixed overlay
+  // parent already has overflow:hidden + body scroll-lock, so containment is
+  // guaranteed at the DOM level without the non-compositor overhead.
+  willChange: "scroll-position",
 };
 
 const HEADER_STYLE: React.CSSProperties = {

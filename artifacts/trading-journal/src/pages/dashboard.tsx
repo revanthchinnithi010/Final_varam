@@ -108,7 +108,7 @@ const DashboardAlertsOverlay = memo(function DashboardAlertsOverlay() {
           style={{
             flex: 1, overflowY: "auto",
             WebkitOverflowScrolling: "touch",
-            overscrollBehavior: "contain",
+            willChange: "scroll-position",
             paddingBottom: "env(safe-area-inset-bottom)",
           }}
         >

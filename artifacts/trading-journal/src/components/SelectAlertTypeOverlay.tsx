@@ -2203,7 +2203,7 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         <div style={{
           flex: 1, overflowY: "auto",
           WebkitOverflowScrolling: "touch",
-          overscrollBehavior: "contain",
+          willChange: "scroll-position",
           paddingBottom: "calc(env(safe-area-inset-bottom) + 32px)",
         } as React.CSSProperties}>
 
