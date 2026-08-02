@@ -38,7 +38,7 @@ export class ReconnectManager {
       return;
     }
     this._attempts += 1;
-    const delay = this._attempts === 1 ? 0 : this.currentDelay;
+    const delay = this.currentDelay;
     console.log(`[Reconnect] attempt ${this._attempts} in ${delay}ms`);
     this.handle = setTimeout(() => {
       this.handle = null;

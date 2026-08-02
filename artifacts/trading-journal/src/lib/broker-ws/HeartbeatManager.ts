@@ -19,8 +19,11 @@ export class HeartbeatManager {
 
   start(): void {
     this.stop();
+    // Do NOT send an immediate ping — wait for the first interval to elapse.
+    // Sending a ping the instant the socket opens gives the remote no time to
+    // establish its own heartbeat cycle, causing the timeout to fire before
+    // any pong/heartbeat arrives and triggering an unnecessary reconnect.
     this.intervalHandle = setInterval(() => this.sendPing(), this.opts.intervalMs);
-    this.sendPing();
   }
 
   stop(): void {

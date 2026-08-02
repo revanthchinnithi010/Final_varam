@@ -58,7 +58,7 @@ export class DeltaWsClient implements IBrokerWsClient {
       url: () => this._wsUrl,
       name: "Delta Ticker WS",
       heartbeatIntervalMs: 25_000,
-      heartbeatTimeoutMs:  10_000,
+      heartbeatTimeoutMs:  20_000, // Delta's own heartbeat cycle can exceed 10 s; 20 s avoids false timeouts
       reconnectOptions: {
         initialDelayMs: 1_000,
         maxDelayMs:    30_000,
