@@ -535,28 +535,130 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
               </div>
             </FieldRow>
 
-            {/* ── Repeat ── */}
-            <FieldRow label="Repeat">
-              <div className="flex gap-2">
-                {([
-                  { value: "three_reminders",        label: "Three Reminders" },
-                  { value: "repeat_until_dismissed",  label: "Repeat Until Dismissed" },
-                  { value: "triple_ring",             label: "Triple Ring" },
-                ] as const).map(({ value, label }) => (
-                  <AnimatedButton
-                    key={value}
-                    onClick={() => setForm(f => ({ ...f, repeatMode: value }))}
-                    className={cn(
-                      "flex-1 py-2 rounded-lg text-[10px] font-semibold border transition-all leading-tight text-center",
-                      form.repeatMode === value
-                        ? "bg-primary/20 border-primary/40 text-primary"
-                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
-                    )}>
-                    {label}
-                  </AnimatedButton>
-                ))}
+            {/* ── REPEAT NOTIFICATIONS ── */}
+            <div className="space-y-3">
+              {/* Section header */}
+              <div>
+                <p style={{
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.09em",
+                  textTransform: "uppercase" as const,
+                  color: "rgba(255,255,255,0.45)", marginBottom: 5,
+                }}>
+                  Repeat Notifications
+                </p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", lineHeight: 1.45 }}>
+                  Choose how many reminder notifications should be sent after this alert is triggered.
+                </p>
               </div>
-            </FieldRow>
+
+              {/* Option cards */}
+              <div className="space-y-2">
+                {([
+                  {
+                    value: "three_reminders"        as const,
+                    title: "Three Reminders",
+                    badge: "Recommended" as string | null,
+                    desc:  "Receive an alert immediately, then two additional reminder notifications every 5 minutes. The alert is automatically deleted after the third reminder.",
+                  },
+                  {
+                    value: "repeat_until_dismissed" as const,
+                    title: "Repeat Until Dismissed",
+                    badge: null,
+                    desc:  "Receive reminder notifications every 10 minutes until you manually disable or delete the alert.",
+                  },
+                  {
+                    value: "triple_ring"            as const,
+                    title: "Triple Ring",
+                    badge: null,
+                    desc:  "Play the alert sound three consecutive times immediately after the alert triggers. No additional reminders will be sent.",
+                  },
+                ]).map(({ value, title, badge, desc }) => {
+                  const sel = form.repeatMode === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, repeatMode: value }))}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 12,
+                        padding: "14px",
+                        borderRadius: 12,
+                        border: sel ? "1.5px solid rgba(251,146,60,0.55)" : "1px solid rgba(255,255,255,0.08)",
+                        background: sel ? "rgba(251,146,60,0.07)" : "rgba(255,255,255,0.025)",
+                        cursor: "pointer",
+                        textAlign: "left" as const,
+                        transition: "background 0.2s, border-color 0.2s",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      {/* Radio indicator */}
+                      <div style={{
+                        width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                        marginTop: 2,
+                        border: sel ? "2px solid #fb923c" : "2px solid rgba(255,255,255,0.22)",
+                        background: sel ? "#fb923c" : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "background 0.2s, border-color 0.2s",
+                      }}>
+                        {sel && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#000" }} />}
+                      </div>
+                      {/* Text block */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <p style={{
+                            fontSize: 13, fontWeight: 600, lineHeight: 1.2, margin: 0,
+                            color: sel ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.72)",
+                          }}>
+                            {title}
+                          </p>
+                          {badge && (
+                            <span style={{
+                              fontSize: 9, fontWeight: 700, letterSpacing: "0.07em",
+                              textTransform: "uppercase" as const,
+                              color: "#fb923c",
+                              background: "rgba(251,146,60,0.12)",
+                              border: "1px solid rgba(251,146,60,0.25)",
+                              borderRadius: 4, padding: "1px 5px", flexShrink: 0,
+                            }}>
+                              {badge}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{
+                          fontSize: 11, lineHeight: 1.45, margin: 0,
+                          color: sel ? "rgba(255,255,255,0.48)" : "rgba(255,255,255,0.33)",
+                        }}>
+                          {desc}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Info card */}
+              <div style={{
+                padding: "11px 13px", borderRadius: 10,
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}>
+                <p style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
+                  textTransform: "uppercase" as const,
+                  color: "rgba(255,255,255,0.35)", marginBottom: 5,
+                }}>
+                  How Repeat Notifications Work
+                </p>
+                <p style={{
+                  fontSize: 11, color: "rgba(255,255,255,0.28)", lineHeight: 1.5, margin: 0,
+                }}>
+                  Repeat settings only affect notification reminders after an alert has been triggered. They do not change how your alert conditions are evaluated.
+                </p>
+              </div>
+            </div>
 
             {/* Target Price */}
             <FieldRow label="Target Price">
@@ -988,28 +1090,130 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
               </div>
             </FieldRow>
 
-            {/* ── Repeat ── */}
-            <FieldRow label="Repeat">
-              <div className="flex gap-2">
-                {([
-                  { value: "three_reminders",        label: "Three Reminders" },
-                  { value: "repeat_until_dismissed",  label: "Repeat Until Dismissed" },
-                  { value: "triple_ring",             label: "Triple Ring" },
-                ] as const).map(({ value, label }) => (
-                  <AnimatedButton
-                    key={value}
-                    onClick={() => setForm(f => ({ ...f, repeatMode: value }))}
-                    className={cn(
-                      "flex-1 py-2 rounded-lg text-[10px] font-semibold border transition-all leading-tight text-center",
-                      form.repeatMode === value
-                        ? "bg-orange-500/20 border-orange-500/40 text-orange-400"
-                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
-                    )}>
-                    {label}
-                  </AnimatedButton>
-                ))}
+            {/* ── REPEAT NOTIFICATIONS ── */}
+            <div className="space-y-3">
+              {/* Section header */}
+              <div>
+                <p style={{
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.09em",
+                  textTransform: "uppercase" as const,
+                  color: "rgba(255,255,255,0.45)", marginBottom: 5,
+                }}>
+                  Repeat Notifications
+                </p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", lineHeight: 1.45 }}>
+                  Choose how many reminder notifications should be sent after this alert is triggered.
+                </p>
               </div>
-            </FieldRow>
+
+              {/* Option cards */}
+              <div className="space-y-2">
+                {([
+                  {
+                    value: "three_reminders"        as const,
+                    title: "Three Reminders",
+                    badge: "Recommended" as string | null,
+                    desc:  "Receive an alert immediately, then two additional reminder notifications every 5 minutes. The alert is automatically deleted after the third reminder.",
+                  },
+                  {
+                    value: "repeat_until_dismissed" as const,
+                    title: "Repeat Until Dismissed",
+                    badge: null,
+                    desc:  "Receive reminder notifications every 10 minutes until you manually disable or delete the alert.",
+                  },
+                  {
+                    value: "triple_ring"            as const,
+                    title: "Triple Ring",
+                    badge: null,
+                    desc:  "Play the alert sound three consecutive times immediately after the alert triggers. No additional reminders will be sent.",
+                  },
+                ]).map(({ value, title, badge, desc }) => {
+                  const sel = form.repeatMode === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, repeatMode: value }))}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 12,
+                        padding: "14px",
+                        borderRadius: 12,
+                        border: sel ? "1.5px solid rgba(251,146,60,0.55)" : "1px solid rgba(255,255,255,0.08)",
+                        background: sel ? "rgba(251,146,60,0.07)" : "rgba(255,255,255,0.025)",
+                        cursor: "pointer",
+                        textAlign: "left" as const,
+                        transition: "background 0.2s, border-color 0.2s",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      {/* Radio indicator */}
+                      <div style={{
+                        width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                        marginTop: 2,
+                        border: sel ? "2px solid #fb923c" : "2px solid rgba(255,255,255,0.22)",
+                        background: sel ? "#fb923c" : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "background 0.2s, border-color 0.2s",
+                      }}>
+                        {sel && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#000" }} />}
+                      </div>
+                      {/* Text block */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <p style={{
+                            fontSize: 13, fontWeight: 600, lineHeight: 1.2, margin: 0,
+                            color: sel ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.72)",
+                          }}>
+                            {title}
+                          </p>
+                          {badge && (
+                            <span style={{
+                              fontSize: 9, fontWeight: 700, letterSpacing: "0.07em",
+                              textTransform: "uppercase" as const,
+                              color: "#fb923c",
+                              background: "rgba(251,146,60,0.12)",
+                              border: "1px solid rgba(251,146,60,0.25)",
+                              borderRadius: 4, padding: "1px 5px", flexShrink: 0,
+                            }}>
+                              {badge}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{
+                          fontSize: 11, lineHeight: 1.45, margin: 0,
+                          color: sel ? "rgba(255,255,255,0.48)" : "rgba(255,255,255,0.33)",
+                        }}>
+                          {desc}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Info card */}
+              <div style={{
+                padding: "11px 13px", borderRadius: 10,
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}>
+                <p style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
+                  textTransform: "uppercase" as const,
+                  color: "rgba(255,255,255,0.35)", marginBottom: 5,
+                }}>
+                  How Repeat Notifications Work
+                </p>
+                <p style={{
+                  fontSize: 11, color: "rgba(255,255,255,0.28)", lineHeight: 1.5, margin: 0,
+                }}>
+                  Repeat settings only affect notification reminders after an alert has been triggered. They do not change how your alert conditions are evaluated.
+                </p>
+              </div>
+            </div>
 
             {/* ── OR ENTER MANUALLY collapsible ── */}
             <div>
@@ -1649,28 +1853,130 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
               </div>
             </FieldRow>
 
-            {/* ── Repeat ── */}
-            <FieldRow label="Repeat">
-              <div className="flex gap-2">
-                {([
-                  { value: "three_reminders",        label: "Three Reminders" },
-                  { value: "repeat_until_dismissed",  label: "Repeat Until Dismissed" },
-                  { value: "triple_ring",             label: "Triple Ring" },
-                ] as const).map(({ value, label }) => (
-                  <AnimatedButton
-                    key={value}
-                    onClick={() => setForm(f => ({ ...f, repeatMode: value }))}
-                    className={cn(
-                      "flex-1 py-2 rounded-lg text-[10px] font-semibold border transition-all leading-tight text-center",
-                      form.repeatMode === value
-                        ? "bg-primary/20 border-primary/40 text-primary"
-                        : "border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-white"
-                    )}>
-                    {label}
-                  </AnimatedButton>
-                ))}
+            {/* ── REPEAT NOTIFICATIONS ── */}
+            <div className="space-y-3">
+              {/* Section header */}
+              <div>
+                <p style={{
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.09em",
+                  textTransform: "uppercase" as const,
+                  color: "rgba(255,255,255,0.45)", marginBottom: 5,
+                }}>
+                  Repeat Notifications
+                </p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", lineHeight: 1.45 }}>
+                  Choose how many reminder notifications should be sent after this alert is triggered.
+                </p>
               </div>
-            </FieldRow>
+
+              {/* Option cards */}
+              <div className="space-y-2">
+                {([
+                  {
+                    value: "three_reminders"        as const,
+                    title: "Three Reminders",
+                    badge: "Recommended" as string | null,
+                    desc:  "Receive an alert immediately, then two additional reminder notifications every 5 minutes. The alert is automatically deleted after the third reminder.",
+                  },
+                  {
+                    value: "repeat_until_dismissed" as const,
+                    title: "Repeat Until Dismissed",
+                    badge: null,
+                    desc:  "Receive reminder notifications every 10 minutes until you manually disable or delete the alert.",
+                  },
+                  {
+                    value: "triple_ring"            as const,
+                    title: "Triple Ring",
+                    badge: null,
+                    desc:  "Play the alert sound three consecutive times immediately after the alert triggers. No additional reminders will be sent.",
+                  },
+                ]).map(({ value, title, badge, desc }) => {
+                  const sel = form.repeatMode === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, repeatMode: value }))}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 12,
+                        padding: "14px",
+                        borderRadius: 12,
+                        border: sel ? "1.5px solid rgba(251,146,60,0.55)" : "1px solid rgba(255,255,255,0.08)",
+                        background: sel ? "rgba(251,146,60,0.07)" : "rgba(255,255,255,0.025)",
+                        cursor: "pointer",
+                        textAlign: "left" as const,
+                        transition: "background 0.2s, border-color 0.2s",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      {/* Radio indicator */}
+                      <div style={{
+                        width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                        marginTop: 2,
+                        border: sel ? "2px solid #fb923c" : "2px solid rgba(255,255,255,0.22)",
+                        background: sel ? "#fb923c" : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "background 0.2s, border-color 0.2s",
+                      }}>
+                        {sel && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#000" }} />}
+                      </div>
+                      {/* Text block */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <p style={{
+                            fontSize: 13, fontWeight: 600, lineHeight: 1.2, margin: 0,
+                            color: sel ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.72)",
+                          }}>
+                            {title}
+                          </p>
+                          {badge && (
+                            <span style={{
+                              fontSize: 9, fontWeight: 700, letterSpacing: "0.07em",
+                              textTransform: "uppercase" as const,
+                              color: "#fb923c",
+                              background: "rgba(251,146,60,0.12)",
+                              border: "1px solid rgba(251,146,60,0.25)",
+                              borderRadius: 4, padding: "1px 5px", flexShrink: 0,
+                            }}>
+                              {badge}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{
+                          fontSize: 11, lineHeight: 1.45, margin: 0,
+                          color: sel ? "rgba(255,255,255,0.48)" : "rgba(255,255,255,0.33)",
+                        }}>
+                          {desc}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Info card */}
+              <div style={{
+                padding: "11px 13px", borderRadius: 10,
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}>
+                <p style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
+                  textTransform: "uppercase" as const,
+                  color: "rgba(255,255,255,0.35)", marginBottom: 5,
+                }}>
+                  How Repeat Notifications Work
+                </p>
+                <p style={{
+                  fontSize: 11, color: "rgba(255,255,255,0.28)", lineHeight: 1.5, margin: 0,
+                }}>
+                  Repeat settings only affect notification reminders after an alert has been triggered. They do not change how your alert conditions are evaluated.
+                </p>
+              </div>
+            </div>
 
             {/* ── OR ENTER MANUALLY collapsible ── */}
             <div>
