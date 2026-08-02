@@ -939,10 +939,10 @@ const Dashboard = memo(function Dashboard() {
           className="flex flex-col items-center gap-2"
         >
           <div
-            className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden"
+            className="w-16 h-16 rounded-full flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.08)" }}
           >
-            <img src={fusionLogoUrl} alt="cTrader" style={{ width: 34, height: 34, objectFit: "contain" }} />
+            <img src={fusionLogoUrl} alt="cTrader" style={{ width: 38, height: 38, objectFit: "contain" }} />
           </div>
           <span className="text-[12px] font-semibold text-white/60">cTrader</span>
         </motion.button>
@@ -955,10 +955,10 @@ const Dashboard = memo(function Dashboard() {
           className="flex flex-col items-center gap-2"
         >
           <div
-            className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden"
+            className="w-16 h-16 rounded-full flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.08)" }}
           >
-            <img src={deltaLogoUrl} alt="Delta Exchange" style={{ width: 34, height: 34, objectFit: "contain" }} />
+            <img src={deltaLogoUrl} alt="Delta Exchange" style={{ width: 38, height: 38, objectFit: "contain" }} />
           </div>
           <span className="text-[12px] font-semibold text-white/60">Delta Exchange</span>
         </motion.button>
