@@ -536,23 +536,23 @@ function DeltaIntegrationOverlay({ open }: { open: boolean }) {
   if (!hasOpenedRef.current) return null;
 
   return (
-    <Suspense fallback={null}>
-      <div
-        style={{
-          position:      "fixed",
-          inset:         0,
-          zIndex:        70,
-          pointerEvents: open ? "auto" : "none",
-          background:    "#000000",
-          transform:     visible ? "translate3d(0,0,0)" : "translate3d(100%,0,0)",
-          transition:    `transform ${visible ? CTRADER_DUR_OPEN : CTRADER_DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
-          willChange:    "transform",
-        }}
-        className="transform-gpu"
-      >
+    <div
+      style={{
+        position:      "fixed",
+        inset:         0,
+        zIndex:        70,
+        pointerEvents: open ? "auto" : "none",
+        background:    "#000000",
+        transform:     visible ? "translate3d(0,0,0)" : "translate3d(100%,0,0)",
+        transition:    `transform ${visible ? CTRADER_DUR_OPEN : CTRADER_DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
+        willChange:    "transform",
+      }}
+      className="transform-gpu"
+    >
+      <Suspense fallback={null}>
         <DeltaIntegration />
-      </div>
-    </Suspense>
+      </Suspense>
+    </div>
   );
 }
 
@@ -595,23 +595,23 @@ function CtraderIntegrationOverlay({ open }: { open: boolean }) {
   if (!hasOpenedRef.current) return null;
 
   return (
-    <Suspense fallback={null}>
-      <div
-        style={{
-          position:     "fixed",
-          inset:        0,
-          zIndex:       70,
-          pointerEvents: open ? "auto" : "none",
-          background:   "#000000",
-          transform:    visible ? "translate3d(0,0,0)" : "translate3d(100%,0,0)",
-          transition:   `transform ${visible ? CTRADER_DUR_OPEN : CTRADER_DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
-          willChange:   "transform",
-        }}
-        className="transform-gpu"
-      >
+    <div
+      style={{
+        position:      "fixed",
+        inset:         0,
+        zIndex:        70,
+        pointerEvents: open ? "auto" : "none",
+        background:    "#000000",
+        transform:     visible ? "translate3d(0,0,0)" : "translate3d(100%,0,0)",
+        transition:    `transform ${visible ? CTRADER_DUR_OPEN : CTRADER_DUR_CLOSE}ms ${visible ? COMPOSITOR_EASE : COMPOSITOR_EASE_CLOSE}`,
+        willChange:    "transform",
+      }}
+      className="transform-gpu"
+    >
+      <Suspense fallback={null}>
         <CtraderIntegration />
-      </div>
-    </Suspense>
+      </Suspense>
+    </div>
   );
 }
 
