@@ -133,8 +133,11 @@ const DashboardAlertsOverlay = memo(function DashboardAlertsOverlay() {
 // alert type for that symbol.
 const DashboardMarketsOverlay = memo(function DashboardMarketsOverlay({
   onWatchlistTap,
+  onCloseAll,
 }: {
   onWatchlistTap: (symbol: string) => void;
+  /** Exits the entire Alerts flow and returns to Dashboard. */
+  onCloseAll: () => void;
 }) {
   const open    = useChartStore(s => s.dashboardMarketsOpen);
   const setOpen = useChartStore(s => s.setDashboardMarketsOpen);
@@ -200,6 +203,7 @@ const DashboardMarketsOverlay = memo(function DashboardMarketsOverlay({
             <MarketsPage
               onBack={() => setOpenRef.current(false)}
               onWatchlistTap={onWatchlistTap}
+              onCloseAll={onCloseAll}
             />
           </Suspense>
         </div>
@@ -824,8 +828,14 @@ const Dashboard = memo(function Dashboard() {
   //    nested inside DashboardMarketsOverlay's portal tree. This prevents any
   //    containing-block leakage from DashboardMarketsOverlay's inner panel.
   const [alertSymbol, setAlertSymbol] = useState<string | null>(null);
-  const handleWatchlistTap  = useCallback((symbol: string) => setAlertSymbol(symbol), []);
+  const handleWatchlistTap   = useCallback((symbol: string) => setAlertSymbol(symbol), []);
   const handleAlertTypeClose = useCallback(() => setAlertSymbol(null), []);
+
+  // Close the entire Alerts flow: dismiss Markets overlay + Select Alert Type overlay.
+  const handleCloseAlertsFlow = useCallback(() => {
+    setDashboardMarketsOpen(false);
+    setAlertSymbol(null);
+  }, [setDashboardMarketsOpen]);
 
   const setDashboardSheetOpen = useChartStore(s => s.setDashboardSheetOpen);
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -937,7 +947,7 @@ const Dashboard = memo(function Dashboard() {
       <DashboardAlertsOverlay />
 
       {/* ── Markets Overlay ── full-screen portal, dashboard tab stays active ── */}
-      <DashboardMarketsOverlay onWatchlistTap={handleWatchlistTap} />
+      <DashboardMarketsOverlay onWatchlistTap={handleWatchlistTap} onCloseAll={handleCloseAlertsFlow} />
 
       {/* ── Select Alert Type — top-level portal sibling, NOT nested inside
            DashboardMarketsOverlay. Keeping it here (same React fiber level as
@@ -949,6 +959,7 @@ const Dashboard = memo(function Dashboard() {
         open={!!alertSymbol}
         symbol={alertSymbol ?? ""}
         onClose={handleAlertTypeClose}
+        onCloseAll={handleCloseAlertsFlow}
       />
 
     </PageTransition>

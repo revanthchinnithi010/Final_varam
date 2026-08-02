@@ -21,7 +21,7 @@
  */
 
 import type { CSSProperties, ReactNode } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 
 interface AppHeaderProps {
   /** Page / screen title rendered next to the back button. */
@@ -32,6 +32,11 @@ interface AppHeaderProps {
   background?: string;
   /** Optional content slotted after the title (e.g. action icons). */
   children?: ReactNode;
+  /**
+   * When provided, renders a ✕ Close button on the right side of the header.
+   * Used in the Alerts flow to exit the entire flow and return to Dashboard.
+   */
+  onCloseAll?: () => void;
 }
 
 /**
@@ -72,6 +77,31 @@ const BACK_BTN: CSSProperties = {
   WebkitTapHighlightColor: "transparent",
 };
 
+/** Minimum 44×44 touch target wrapping the 32×32 visual circle. */
+const CLOSE_BTN_WRAP: CSSProperties = {
+  width: 44,
+  height: 44,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+  marginRight: -6, // optical alignment with 16px side padding
+};
+
+const CLOSE_BTN: CSSProperties = {
+  width: 32,
+  height: 32,
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  color: "rgba(255,255,255,0.6)",
+  WebkitTapHighlightColor: "transparent",
+};
+
 const TITLE: CSSProperties = {
   fontSize: 17,
   fontWeight: 700,
@@ -86,6 +116,7 @@ export function AppHeader({
   onBack,
   background = "#000000",
   children,
+  onCloseAll,
 }: AppHeaderProps) {
   const safeTop = getSafeTop();
   return (
@@ -100,6 +131,13 @@ export function AppHeader({
       </button>
       <h1 style={TITLE}>{title}</h1>
       {children}
+      {onCloseAll && (
+        <div style={CLOSE_BTN_WRAP}>
+          <button onClick={onCloseAll} style={CLOSE_BTN} aria-label="Close alerts flow">
+            <X style={{ width: 20, height: 20 }} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

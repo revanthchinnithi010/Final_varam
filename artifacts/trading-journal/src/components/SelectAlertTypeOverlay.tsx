@@ -342,12 +342,13 @@ function fmtUtcTime(sec: number): string {
 
 // ── Price Alert full-screen screen ───────────────────────────────────────────
 const PriceAlertScreen = memo(function PriceAlertScreen({
-  open, symbol, onClose, onSave,
+  open, symbol, onClose, onSave, onCloseAll,
 }: {
   open: boolean;
   symbol: string;
   onClose: () => void;
   onSave: (a: PriceAlert) => void;
+  onCloseAll?: () => void;
 }) {
   const [visible, setVisible] = useState(false);
   const hasOpenedRef = useRef(false);
@@ -436,7 +437,7 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
           overflow: "hidden",
         }}
       >
-        <AppHeader title="Create Price Alert" onBack={onClose} />
+        <AppHeader title="Create Price Alert" onBack={onClose} onCloseAll={onCloseAll} />
 
         <div style={{
           flex: 1, overflowY: "auto",
@@ -710,12 +711,13 @@ const PriceAlertScreen = memo(function PriceAlertScreen({
 
 // ── Zone Alert full-screen screen ────────────────────────────────────────────
 const ZoneAlertScreen = memo(function ZoneAlertScreen({
-  open, symbol, onClose, onSave,
+  open, symbol, onClose, onSave, onCloseAll,
 }: {
   open: boolean;
   symbol: string;
   onClose: () => void;
   onSave: (a: ZoneAlert) => void;
+  onCloseAll?: () => void;
 }) {
   const [visible, setVisible] = useState(false);
   const hasOpenedRef = useRef(false);
@@ -852,7 +854,7 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
           overflow: "hidden",
         }}
       >
-        <AppHeader title="Create Zone Alert" onBack={onClose} />
+        <AppHeader title="Create Zone Alert" onBack={onClose} onCloseAll={onCloseAll} />
 
         <div style={{
           flex: 1, overflowY: "auto",
@@ -1314,12 +1316,13 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
 
 // ── Trendline Alert full-screen screen ───────────────────────────────────────
 const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
-  open, symbol, onClose, onSave,
+  open, symbol, onClose, onSave, onCloseAll,
 }: {
   open: boolean;
   symbol: string;
   onClose: () => void;
   onSave: (a: TrendlineAlert) => void;
+  onCloseAll?: () => void;
 }) {
   const [visible, setVisible] = useState(false);
   const hasOpenedRef = useRef(false);
@@ -1525,7 +1528,7 @@ const TrendlineAlertScreen = memo(function TrendlineAlertScreen({
           overflow: "hidden",
         }}
       >
-        <AppHeader title="Create Trendline Alert" onBack={onClose} />
+        <AppHeader title="Create Trendline Alert" onBack={onClose} onCloseAll={onCloseAll} />
 
         <div style={{
           flex: 1, overflowY: "auto",
@@ -2107,10 +2110,12 @@ export interface SelectAlertTypeOverlayProps {
   open: boolean;
   symbol: string;
   onClose: () => void;
+  /** Exits the entire Alerts flow and returns to Dashboard. */
+  onCloseAll?: () => void;
 }
 
 export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
-  open, symbol, onClose,
+  open, symbol, onClose, onCloseAll,
 }: SelectAlertTypeOverlayProps) {
   const { addAlert } = useAlertStore();
 
@@ -2183,7 +2188,7 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
           }}
         >
         {/* ── Header ── */}
-        <AppHeader title="Select Alert Type" onBack={onClose} />
+        <AppHeader title="Select Alert Type" onBack={onClose} onCloseAll={onCloseAll} />
 
         {/* ── Scrollable content ── */}
         <div style={{
@@ -2241,6 +2246,7 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         symbol={symbol}
         onClose={() => setActiveModal(null)}
         onSave={handleTrendlineAlertSave}
+        onCloseAll={onCloseAll}
       />
 
       {/* Zone — full-screen slide-in screen */}
@@ -2249,6 +2255,7 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         symbol={symbol}
         onClose={() => setActiveModal(null)}
         onSave={handleZoneAlertSave}
+        onCloseAll={onCloseAll}
       />
       {/* Price — full-screen slide-in screen */}
       <PriceAlertScreen
@@ -2256,6 +2263,7 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
         symbol={symbol}
         onClose={() => setActiveModal(null)}
         onSave={handlePriceAlertSave}
+        onCloseAll={onCloseAll}
       />
     </>,
     document.body,

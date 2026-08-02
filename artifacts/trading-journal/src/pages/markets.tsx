@@ -19,9 +19,12 @@ import { SharedMarketSelector } from "@/components/SharedMarketSelector";
 export default function Markets({
   onBack,
   onWatchlistTap: onWatchlistTapProp,
+  onCloseAll,
 }: {
   onBack?: () => void;
   onWatchlistTap?: (symbol: string) => void;
+  /** Exits the entire Alerts flow and returns to Dashboard (Alerts flow only). */
+  onCloseAll?: () => void;
 } = {}) {
   const chartSymbol = useChartStore(s => s.symbol);
   const [, navigate] = useLocation();
@@ -56,6 +59,7 @@ export default function Markets({
         onSelect={handleMarketsSelect}
         onWatchlistTap={handleWatchlistTap}
         backAction={onBack}
+        closeAllAction={onCloseAll}
       />
     </div>
   );

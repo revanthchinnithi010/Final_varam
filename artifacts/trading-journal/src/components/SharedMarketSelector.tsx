@@ -550,6 +550,11 @@ export interface SharedMarketSelectorProps {
    * an overlay (e.g. from Dashboard) without changing the bottom nav tab.
    */
   backAction?: () => void;
+  /**
+   * When provided (Alerts flow only), renders a ✕ Close button in the Markets
+   * header that exits the entire Alerts flow and returns to Dashboard.
+   */
+  closeAllAction?: () => void;
 }
 
 export const SharedMarketSelector = memo(function SharedMarketSelector({
@@ -561,6 +566,7 @@ export const SharedMarketSelector = memo(function SharedMarketSelector({
   onClose,
   headerActions,
   backAction,
+  closeAllAction,
 }: SharedMarketSelectorProps) {
 
   const [activeTab, setActiveTab] = useState<Tab>("Watchlist");
@@ -1243,7 +1249,7 @@ export const SharedMarketSelector = memo(function SharedMarketSelector({
         )}
 
         {/* Back button row — only when backAction is present (overlay/push mode). */}
-        {backAction && <AppHeader title="Markets" onBack={backAction} />}
+        {backAction && <AppHeader title="Markets" onBack={backAction} onCloseAll={closeAllAction} />}
 
         {/* Tab row + action buttons */}
         <div style={{
