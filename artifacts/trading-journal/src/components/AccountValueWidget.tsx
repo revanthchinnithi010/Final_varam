@@ -19,7 +19,7 @@ function Dots({ count = 10 }: { count?: number }) {
   return (
     <span className="inline-flex items-center gap-[3px] align-middle">
       {Array.from({ length: count }).map((_, i) => (
-        <span key={i} className="inline-block w-[6px] h-[6px] rounded-full bg-white/25" />
+        <span key={i} className="inline-block w-[6px] h-[6px] rounded-full bg-foreground/25" />
       ))}
     </span>
   );
@@ -79,7 +79,7 @@ export default function AccountValueWidget({
   // Palette constants
   const PROFIT  = "#22C55E";
   const LOSS    = "#EF4444";
-  const DIVIDER = "rgba(255,255,255,0.08)";
+  const DIVIDER = "var(--dash-metric-divider)";
 
   return (
     <div className="dash-account-card overflow-hidden">
@@ -133,7 +133,7 @@ export default function AccountValueWidget({
       <div
         className="mx-3 mb-3 rounded-xl grid grid-cols-2 overflow-hidden"
         style={{
-          background: "rgba(255,255,255,0.04)",
+          background: "var(--elevate-1)",
           border: `1px solid ${DIVIDER}`,
         }}
       >

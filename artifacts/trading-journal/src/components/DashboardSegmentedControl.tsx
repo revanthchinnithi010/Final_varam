@@ -73,9 +73,9 @@ const DashboardSegmentedControl = memo(function DashboardSegmentedControl() {
           width:               "calc(50% - 4px)",
           height:              "calc(100% - 8px)",
           borderRadius:        9,
-          background:          "#2A2D31",
-          border:              "1px solid rgba(255, 255, 255, 0.10)",
-          boxShadow:           "inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 20px rgba(0,0,0,0.35)",
+          background:          "var(--dash-segment-pill-bg)",
+          border:              "1px solid var(--dash-segment-pill-border)",
+          boxShadow:           "var(--dash-segment-pill-shadow)",
           transform:           `translate3d(${activeKey === "reports" ? "100%" : "0%"}, 0, 0)`,
           transition:          `transform 200ms ${COMPOSITOR_EASE}`,
           willChange:          "transform",
@@ -100,7 +100,7 @@ const DashboardSegmentedControl = memo(function DashboardSegmentedControl() {
               if (tab.href !== pathname) navigate(tab.href);
             }}
             className={`relative z-10 flex items-center justify-center text-[14px] font-semibold transition-[color,background,transform] duration-150 ease-out active:scale-[0.96] rounded-[9px] w-full h-full ${selected ? "dash-segment-btn-active" : "dash-segment-btn-idle"}`}
-            style={{ color: selected ? "#FFFFFF" : "#6E7578", willChange: "transform", touchAction: "manipulation" }}
+            style={{ color: selected ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))", willChange: "transform", touchAction: "manipulation" }}
           >
             {/* Plain CSS transitions, not per-frame JS-driven ones — `color`
                 isn't GPU-compositable, so animating it through Motion.dev

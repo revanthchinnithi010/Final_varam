@@ -258,6 +258,22 @@
   --body-grad-1:               rgba(255, 255, 255, 0.004);
   --body-grad-2:               rgba(93, 169, 255, 0.018);
   --notification-badge-border: #05070A;
+
+  /* ── Dashboard-specific tokens ───────────────────────────────── */
+  --dash-bg:                   #000000;
+  --dash-overlay-bg:           #000000;
+  --dash-sheet-bg:             linear-gradient(180deg, #0a0a0a 0%, #000000 40%, #050508 100%);
+  --dash-sheet-border:         rgba(255, 255, 255, 0.08);
+  --dash-handle-bg:            rgba(255, 255, 255, 0.15);
+  --dash-segment-pill-bg:      #2A2D31;
+  --dash-segment-pill-border:  rgba(255, 255, 255, 0.10);
+  --dash-segment-pill-shadow:  inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 20px rgba(0,0,0,0.35);
+  --dash-metric-bg:            #111111;
+  --dash-metric-border:        rgba(255, 255, 255, 0.09);
+  --dash-metric-divider:       rgba(255, 255, 255, 0.07);
+  --dash-quick-btn-bg:         rgba(255, 255, 255, 0.08);
+  --dash-tooltip-bg:           #111111;
+  --dash-cal-day-color:        rgba(255, 255, 255, 0.90);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -354,6 +370,22 @@
   --body-grad-1:               rgba(124, 58, 237, 0.03);
   --body-grad-2:               rgba(59, 130, 246, 0.025);
   --notification-badge-border: #F5F7FA;
+
+  /* ── Dashboard-specific tokens (light) ──────────────────────── */
+  --dash-bg:                   #F5F7FA;
+  --dash-overlay-bg:           #FFFFFF;
+  --dash-sheet-bg:             #FFFFFF;
+  --dash-sheet-border:         rgba(0, 0, 0, 0.08);
+  --dash-handle-bg:            rgba(0, 0, 0, 0.12);
+  --dash-segment-pill-bg:      #FFFFFF;
+  --dash-segment-pill-border:  rgba(0, 0, 0, 0.08);
+  --dash-segment-pill-shadow:  0 1px 4px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.90) inset;
+  --dash-metric-bg:            #F9FAFB;
+  --dash-metric-border:        rgba(0, 0, 0, 0.07);
+  --dash-metric-divider:       rgba(0, 0, 0, 0.06);
+  --dash-quick-btn-bg:         rgba(0, 0, 0, 0.06);
+  --dash-tooltip-bg:           #FFFFFF;
+  --dash-cal-day-color:        #1A1A2E;
 
   /* ── Override red-400/500 for better light-mode contrast ──── */
   --color-red-400: #DC2626;
@@ -533,6 +565,12 @@ body.tj-modal-open .animate-pulse {
   border: 1px solid #252525;
   border-radius: 20px;
 }
+.light .dash-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 14px rgba(0,0,0,0.05);
+}
 
 .dash-account-card {
   /* ── Design tokens ─────────────────────────────── */
@@ -624,6 +662,32 @@ body.tj-modal-open .animate-pulse {
 .dash-account-card:hover  { filter: brightness(1.05); }
 .dash-account-card:active { filter: brightness(0.97); }
 
+/* Light mode override for account card */
+.light .dash-account-card {
+  --stat-title:  rgba(20, 22, 26, 0.62);
+  --stat-value:  #14161A;
+  --stat-sub:    rgba(20, 22, 26, 0.50);
+  --stat-icon:   rgba(20, 22, 26, 0.45);
+  background: #FFFFFF;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.07);
+}
+.light .dash-account-card::before {
+  background:
+    radial-gradient(ellipse 100% 40% at 50% 0%, rgba(0,0,0,0.012) 0%, transparent 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.008) 0%, transparent 40%);
+}
+.light .dash-account-card::after {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.90),
+    inset 0 0 0 1px rgba(0,0,0,0.04),
+    inset 0 -1px 0 rgba(0,0,0,0.02);
+}
+.light .dash-account-card:hover  { filter: brightness(1.02); }
+.light .dash-account-card:active { filter: brightness(0.985); }
+
 /* ── Dashboard / Reports segmented control — liquid glass ── */
 .dash-segment-bar {
   background:          rgba(12, 12, 14, 0.94);
@@ -680,6 +744,23 @@ body.tj-modal-open .animate-pulse {
 
 /* Selected tab hover */
 .dash-segment-btn-active:hover { background: #34383D; }
+
+/* Light mode override for segment bar */
+.light .dash-segment-bar {
+  background: #FFFFFF;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.light .dash-segment-bar::before { background: none; }
+.light .dash-segment-bar::after {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.90),
+    inset 0 0 0 1px rgba(0,0,0,0.03);
+}
+.light .dash-segment-btn-idle:hover  { background: rgba(0, 0, 0, 0.04); }
+.light .dash-segment-btn-active:hover { background: rgba(0, 0, 0, 0.03); }
 
 .glass-card {
   background:
