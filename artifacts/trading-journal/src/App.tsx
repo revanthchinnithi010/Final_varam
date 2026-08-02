@@ -414,7 +414,13 @@ const APP_KEEP_ALIVE_PATHS = new Set(["/", "/charts", "/reports", "/pnl", "/mark
  * Waiting for onExitComplete is wrong here — it lets the header stay visible
  * while the overlay fades out, exposing it behind the entering destination page.
  */
-const APP_COVER_DETAIL_PATHS = new Set(["/portfolio", "/balances", "/net-pnl"]);
+const APP_COVER_DETAIL_PATHS = new Set([
+  "/portfolio", "/balances", "/net-pnl",
+  // Compositor-slide overlays (position:fixed z:70) — same immediate-update
+  // rule as cover-detail: the overlay is still sliding off-screen during the
+  // 210ms close animation, so updating the header immediately is safe.
+  "/ctrader-integration", "/delta-integration",
+]);
 
 // Known pathnames — used to decide whether to render NotFound.
 const KNOWN_PATHS = new Set([
