@@ -18,9 +18,9 @@ function SectionHeader({ icon: Icon, title, description }: {
 }) {
   return (
     <div className="flex items-center gap-3 mb-1">
-      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0"
+      <div className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0"
         style={{ background: "rgba(57,91,67,0.22)", border: "1px solid rgba(57,91,67,0.32)" }}>
-        <Icon className="w-3.5 h-3.5 text-primary" />
+        <Icon className="w-4 h-4 text-primary" />
       </div>
       <div>
         <h3 className="text-[15px] font-semibold text-white leading-tight">{title}</h3>
@@ -174,9 +174,9 @@ function DeltaPanel() {
       style={{ background: "rgba(16,37,28,0.65)", border: "1px solid rgba(57,91,67,0.24)" }}>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: "rgba(139,92,246,0.14)", border: "1px solid rgba(139,92,246,0.28)" }}>
-            <Activity className="w-4 h-4 text-purple-400" />
+            <Activity className="w-5 h-5 text-purple-400" />
           </div>
           <div>
             <p className="font-semibold text-white text-[14px] leading-tight">Delta Exchange</p>
@@ -356,9 +356,9 @@ function TelegramPanel() {
       style={{ background: "rgba(16,37,28,0.65)", border: "1px solid rgba(57,91,67,0.24)" }}>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: "rgba(0,136,204,0.14)", border: "1px solid rgba(0,136,204,0.28)" }}>
-            <Send className="w-4 h-4 text-sky-400" />
+            <Send className="w-5 h-5 text-sky-400" />
           </div>
           <div>
             <p className="font-semibold text-white text-[14px] leading-tight">Telegram Bot</p>
@@ -588,9 +588,9 @@ function ServerIpPanel() {
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.26)" }}>
-            <Globe className="w-4 h-4 text-yellow-400" />
+            <Globe className="w-5 h-5 text-yellow-400" />
           </div>
           <div>
             <p className="font-semibold text-white text-[14px] leading-tight">Backend Server IP</p>
