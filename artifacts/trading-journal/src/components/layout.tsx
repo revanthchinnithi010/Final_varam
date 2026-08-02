@@ -25,7 +25,6 @@ import { SidebarSystemSections } from "./SidebarSystemSections";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useChartStore } from "@/store/chartStore";
 import { useCurrencyStore, CURRENCY_META } from "@/store/currencyStore";
-import { AreaLabLogo } from "./AreaLabLogo";
 
 const NAV_SECTIONS = [
   {
@@ -233,7 +232,6 @@ const NavigationDrawer = memo(function NavigationDrawer({
           style={{ borderBottom: "1px solid var(--surface-sidebar-logo-border)" }}
         >
           <div className="flex-1 min-w-0">
-            <AreaLabLogo height={26} />
             <p
               className="signature-shimmer text-[13px] leading-none mt-[6px] truncate"
               style={{ color: "rgba(148,163,184,0.72)" }}
@@ -641,7 +639,6 @@ export const Layout = memo(function Layout({
               )}
 
               <div className="flex flex-col items-start justify-center min-w-0">
-                <AreaLabLogo height={isMobile ? 18.5 : 20.6} />
                 <span
                   className="truncate"
                   style={{
