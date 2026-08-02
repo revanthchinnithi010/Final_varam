@@ -45,7 +45,8 @@ const Charts         = lazy(() => import("@/pages/charts"));
 const NetPnl           = lazy(() => import("@/pages/NetPnLAnalytics"));
 const Trade            = lazy(() => import("@/pages/trade"));
 const NotFound       = lazy(() => import("@/pages/not-found"));
-const CtraderTest    = lazy(() => import("@/pages/ctrader-test"));
+const CtraderTest        = lazy(() => import("@/pages/ctrader-test"));
+const CtraderIntegration = lazy(() => import("@/pages/ctrader-integration"));
 // Kept lazy — imports Recharts; start immediately so it's ready before navigation.
 const _pPnlAnalytics  = import("@/pages/pnl-analytics");
 const _pPositionDetail = import("@/pages/position-detail");
@@ -386,10 +387,11 @@ const ALERTS_NODE = (
 
 /** Pages that hide the Layout header entirely. */
 const APP_NO_HEADER_PATHS = new Set([
-  "/charts",          // gesture surface owns the full viewport
-  "/position-detail", // clip-path shared-element covers the full screen
-  "/pnl",             // keep-alive full-viewport UI
-  "/trades",          // has its own secondary header
+  "/charts",                // gesture surface owns the full viewport
+  "/position-detail",       // clip-path shared-element covers the full screen
+  "/pnl",                   // keep-alive full-viewport UI
+  "/trades",                // has its own secondary header
+  "/ctrader-integration",   // full-screen detail page with its own custom header
 ]);
 
 /**
@@ -418,7 +420,7 @@ const KNOWN_PATHS = new Set([
   "/calendar", "/notebook", "/settings",
   "/calc/crypto", "/calc/forex", "/calc/position", "/calc/margin", "/calc/risk",
   "/portfolio", "/balances", "/pnl", "/net-pnl", "/trade", "/ctrader-test", "/charts",
-  "/position-detail",
+  "/position-detail", "/ctrader-integration",
 ]);
 
 /**
@@ -564,6 +566,7 @@ function Router() {
       () => import("@/pages/NetPnLAnalytics"),
       () => import("@/pages/trade"),
       () => import("@/pages/ctrader-test"),
+      () => import("@/pages/ctrader-integration"),
     ];
     const timers: ReturnType<typeof setTimeout>[] = [];
     const id = setTimeout(() => {
@@ -739,7 +742,8 @@ function Router() {
         {pathname === "/calc/margin"   && <Suspense key="/calc/margin"   fallback={<PageLoader />}><PageTransition key="/calc/margin"  custom={dir}><StandardPageWrapper bottomPad={bp} pathname="/calc/margin"><CalcMargin  /></StandardPageWrapper></PageTransition></Suspense>}
         {pathname === "/calc/risk"     && <Suspense key="/calc/risk"     fallback={<PageLoader />}><PageTransition key="/calc/risk"    custom={dir}><StandardPageWrapper bottomPad={bp} pathname="/calc/risk"><CalcRisk    /></StandardPageWrapper></PageTransition></Suspense>}
         {pathname === "/trade"         && <Suspense key="/trade"         fallback={<PageLoader />}><PageTransition key="/trade"        custom={dir}><StandardPageWrapper bottomPad={bp} pathname="/trade"><Trade       /></StandardPageWrapper></PageTransition></Suspense>}
-        {pathname === "/ctrader-test"  && <Suspense key="/ctrader-test"  fallback={<PageLoader />}><PageTransition key="/ctrader-test" custom={dir}><StandardPageWrapper bottomPad={bp} pathname="/ctrader-test"><CtraderTest /></StandardPageWrapper></PageTransition></Suspense>}
+        {pathname === "/ctrader-test"         && <Suspense key="/ctrader-test"         fallback={<PageLoader />}><PageTransition key="/ctrader-test"         custom={dir}><StandardPageWrapper bottomPad={bp} pathname="/ctrader-test"><CtraderTest /></StandardPageWrapper></PageTransition></Suspense>}
+        {pathname === "/ctrader-integration"  && <Suspense key="/ctrader-integration"  fallback={<PageLoader />}><PageTransition key="/ctrader-integration"  custom={dir}><CtraderIntegration /></PageTransition></Suspense>}
 
         {/* ── 404 ── */}
         {!KNOWN_PATHS.has(pathname)    && <Suspense key="not-found" fallback={<PageLoader />}><PageTransition key="not-found"  custom={dir}><StandardPageWrapper bottomPad={bp} pathname="not-found"><NotFound    /></StandardPageWrapper></PageTransition></Suspense>}

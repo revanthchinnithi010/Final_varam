@@ -935,7 +935,7 @@ const Dashboard = memo(function Dashboard() {
         <motion.button
           whileTap={{ scale: 0.95 }}
           transition={TAP_TRANSITION}
-          onClick={() => navigate("/brokers")}
+          onClick={() => navigate("/ctrader-integration")}
           className="flex flex-col items-center gap-2"
         >
           <div
