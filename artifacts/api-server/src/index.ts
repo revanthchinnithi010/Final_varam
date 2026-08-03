@@ -87,16 +87,26 @@ marketData.on("subscription_update", (update) => {
   wsManager.broadcast({ type: "subscription_update", ...update });
 });
 
-// ── cTrader tick engine → CandleAggregator + WebSocket broadcast ─────────────
+// ── cTrader tick engine → AlertEngine + CandleAggregator + WebSocket broadcast ─
 ctraderTickEngine.on("tick", (tick: CtraderTick) => {
-  wsManager.clearCandleCache();
-  candleAggregator.ingestTick({
+  // Build a unified tick once and reuse it everywhere.
+  const ctraderUnifiedTick: ProviderTick = {
     symbol:    tick.symbol,
     price:     tick.price,
     volume:    1,
     timestamp: tick.timestamp,
     provider:  "ctrader",
-  } as ProviderTick);
+  };
+
+  // ── FIX: forward into MarketDataService so AlertEngine evaluates zones ──
+  // Previously cTrader ticks ONLY went to candleAggregator + wsManager.
+  // AlertEngine listens exclusively to marketData.on("tick"), so any zone
+  // whose symbol is served by cTrader never received a tick → evaluateZones()
+  // was never called → zone Enter alerts never fired.
+  marketData.injectExternalTick(ctraderUnifiedTick);
+
+  wsManager.clearCandleCache();
+  candleAggregator.ingestTick(ctraderUnifiedTick);
 
   wsManager.broadcast({
     type:     "ctrader_tick",

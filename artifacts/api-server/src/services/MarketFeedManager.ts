@@ -84,6 +84,22 @@ export class MarketFeedManager extends EventEmitter {
     super();
   }
 
+  /**
+   * Inject a tick from an external engine (e.g. cTrader) into the feed manager.
+   * Updates the latest-tick cache and emits a "tick" event so all listeners
+   * (including AlertEngine) see the price without needing a MarketFeedManager
+   * provider subscription.
+   */
+  injectExternalTick(tick: UnifiedTick): void {
+    this.latestTicks.set(tick.symbol, tick);
+    const history = this.tickHistory.get(tick.symbol) ?? [];
+    history.push(tick);
+    if (history.length > MAX_TICKS_PER_SYMBOL) history.shift();
+    this.tickHistory.set(tick.symbol, history);
+    this.totalTicks++;
+    this.emit("tick", tick);
+  }
+
   async start(defaultSymbols: string[] = []): Promise<void> {
     this.buildStaticProviders();
 

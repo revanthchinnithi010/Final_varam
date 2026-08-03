@@ -259,6 +259,15 @@ export class AlertEngine {
       this.openPrices.set(tick.symbol, tick.price);
     }
 
+    // Diagnostic: emit a log whenever a tick arrives for a symbol that has an active zone
+    const watchedZones = [...this.activeZones.values()].filter(z => z.symbol === tick.symbol);
+    if (watchedZones.length > 0) {
+      logger.info(
+        { symbol: tick.symbol, price: tick.price, provider: (tick as { provider?: string }).provider ?? "unknown", zoneCount: watchedZones.length },
+        "AlertEngine: ✔ tick received — evaluating zones",
+      );
+    }
+
     await this.evaluatePriceAlerts(tick);
     await this.evaluateZones(tick);
     await this.evaluateTrendlines(tick);
@@ -316,6 +325,19 @@ export class AlertEngine {
       const lastState = this.zoneStates.get(id);
       this.zoneStates.set(id, currentState);
 
+      // Diagnostic: log every zone evaluation with full context
+      logger.debug(
+        {
+          zoneId: id, symbol: zone.symbol,
+          upperPrice: zone.upperPrice, lowerPrice: zone.lowerPrice,
+          price, lastState: lastState ?? "(none)", currentState,
+          condition: zone.condition,
+          suppressed: this.enterSuppressed.has(id),
+          // AlertEngine.ts:evaluateZones
+        },
+        "AlertEngine: evaluateZones — zone checked",
+      );
+
       // Fix A: loadAlerts() seeds zoneStates from the latest cached price on
       // every reload, so lastState is undefined only in the narrow window where
       // a zone was just registered but no price has been cached for its symbol
@@ -323,35 +345,52 @@ export class AlertEngine {
       // next tick.  Critically: we do NOT add to enterSuppressed here, so a
       // zone created while price is already inside will fire on the next
       // outside→inside transition rather than being permanently blocked.
-      if (lastState === undefined) continue;
+      if (lastState === undefined) {
+        logger.info({ zoneId: id, symbol: zone.symbol, currentState }, "AlertEngine: evaluateZones — SKIP: first tick, seeding state");
+        continue;
+      }
 
       const cond = zone.condition;
       let shouldFire = false;
+      let skipReason = "no condition matched";
 
       if (cond === "enter") {
         if (currentState !== "inside") {
           // Price exited the zone — clear suppression so the next entry fires.
-          // Fix B: this is the only place enterSuppressed is cleared for live
-          // ticks.  loadAlerts() handles the cooldown-window case where the
-          // zone was absent from activeZones while price moved outside.
           this.enterSuppressed.delete(id);
+          skipReason = `price is ${currentState} (outside zone) — suppression cleared, waiting for entry`;
         } else if (lastState !== "inside" && !this.enterSuppressed.has(id)) {
-          // Fix A: outside → inside transition (lastState is guaranteed
-          // non-undefined here).  Fire once and suppress until next exit.
+          // Fix A: outside → inside transition. Fire once and suppress until next exit.
           this.enterSuppressed.add(id);
           shouldFire = true;
+          skipReason = "n/a — FIRING";
+        } else if (this.enterSuppressed.has(id)) {
+          skipReason = "price still inside zone (suppressed) — waiting for price to exit first";
+        } else {
+          skipReason = "price still inside zone (lastState=inside) — no transition";
         }
-        // currentState === "inside" && lastState === "inside": still inside — no-op.
       } else if (cond === "touch") {
-        // Fire on every outside → inside crossing (no long-term suppression).
         shouldFire = currentState === "inside" && lastState !== "inside";
+        skipReason = shouldFire ? "n/a — FIRING" : `touch: need outside→inside, got ${lastState}→${currentState}`;
       } else if (cond === "retest") {
         shouldFire = currentState === "inside" && lastState !== "inside";
+        skipReason = shouldFire ? "n/a — FIRING" : `retest: need outside→inside, got ${lastState}→${currentState}`;
       } else if (cond === "break") {
         shouldFire = currentState !== "inside" && lastState === "inside";
+        skipReason = shouldFire ? "n/a — FIRING" : `break: need inside→outside, got ${lastState}→${currentState}`;
       }
 
+      // Diagnostic: log the decision with skip reason
+      logger.info(
+        { zoneId: id, symbol: zone.symbol, shouldFire, skipReason, lastState, currentState, condition: cond },
+        "AlertEngine: evaluateZones — decision",
+      );
+
       if (shouldFire) {
+        logger.info(
+          { zoneId: id, symbol: zone.symbol, price, currentState, condition: cond },
+          "AlertEngine: evaluateZones — → fireZoneAlert()",
+        );
         // "enter" keeps the zone alive so it can fire again on re-entry.
         await this.fireZoneAlert(zone, tick.price, currentState, cond === "enter");
       }
@@ -521,9 +560,14 @@ export class AlertEngine {
   }
 
   private async fireZoneAlert(zone: ZoneRow, triggeredPrice: number, state: ZoneState, keepAlive = false): Promise<void> {
+    logger.info({ zoneId: zone.id, symbol: zone.symbol, triggeredPrice, state, keepAlive }, "AlertEngine: fireZoneAlert — ENTRY");
+
     // In-memory dedup: prevent same zone firing twice within 10 s
     const lastFired = this.recentlyFired.get(zone.id);
-    if (lastFired && Date.now() - lastFired < 10_000) return;
+    if (lastFired && Date.now() - lastFired < 10_000) {
+      logger.warn({ zoneId: zone.id, dedupAgeMs: Date.now() - lastFired }, "AlertEngine: fireZoneAlert — SKIPPED by 10s dedup");
+      return;
+    }
     this.recentlyFired.set(zone.id, Date.now());
 
     const direction = state === "inside" ? "entered" : state === "above" ? "broke above" : "broke below";

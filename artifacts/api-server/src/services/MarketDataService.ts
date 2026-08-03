@@ -48,6 +48,9 @@ export class MarketDataService extends EventEmitter {
   enableDelta(symbols: string[]): void                   { this.feedManager.enableDelta(symbols); }
   disableDelta(): void                                   { this.feedManager.disableDelta(); }
 
+  /** Forward a tick from an external engine (cTrader) into this service's event stream. */
+  injectExternalTick(tick: UnifiedTick): void            { this.feedManager.injectExternalTick(tick); }
+
   getSymbolService()                                     { return this.feedManager.symbolService; }
   getDiagnostics()                                       { return this.feedManager.getDiagnostics(); }
 
