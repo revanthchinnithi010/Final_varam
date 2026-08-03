@@ -372,7 +372,7 @@
   --notification-badge-border: #F5F7FA;
 
   /* ── Dashboard-specific tokens (light) ──────────────────────── */
-  --dash-bg:                   #F5F7FA;
+  --dash-bg:                   #FFFFFF;
   --dash-overlay-bg:           #FFFFFF;
   --dash-sheet-bg:             #FFFFFF;
   --dash-sheet-border:         rgba(0, 0, 0, 0.08);

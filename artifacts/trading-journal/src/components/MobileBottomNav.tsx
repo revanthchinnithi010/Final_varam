@@ -76,20 +76,23 @@ export function MobileBottomNav() {
     }
   }, [activeIdx, mobileChartFullscreen]);
 
-  /* ── Deep black minimalist palette ── */
-  const pillBg          = "rgba(5,5,8,0.82)";
-  const pillInsetShadow = "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.40)";
-  const wrapperGradient = "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 40%, rgba(0,0,0,0.30) 70%, rgba(0,0,0,0.55) 100%)";
-  const wrapperShadow   = [
-    "0 8px 32px rgba(0,0,0,0.70)",
-    "0 2px 8px rgba(0,0,0,0.50)",
-  ].join(",");
+  /* ── Palette — adapts dark ↔ light ── */
+  const pillBg          = isLight ? "#FFFFFF"          : "rgba(5,5,8,0.82)";
+  const pillInsetShadow = isLight
+    ? "0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)"
+    : "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.40)";
+  const wrapperGradient = isLight
+    ? "linear-gradient(135deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.02) 40%, rgba(0,0,0,0.06) 100%)"
+    : "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 40%, rgba(0,0,0,0.30) 70%, rgba(0,0,0,0.55) 100%)";
+  const wrapperShadow = isLight
+    ? "0 4px 20px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)"
+    : ["0 8px 32px rgba(0,0,0,0.70)", "0 2px 8px rgba(0,0,0,0.50)"].join(",");
 
-  const activeIconColor    = "#ffffff";
-  const inactiveIconColor  = "rgba(148,163,184,0.44)";
-  const activeLabelColor   = "rgba(255,255,255,0.92)";
-  const inactiveLabelColor = "rgba(148,163,184,0.40)";
-  const badgeBorder        = "rgba(5,5,8,0.9)";
+  const activeIconColor    = isLight ? "#111827"                  : "#ffffff";
+  const inactiveIconColor  = isLight ? "rgba(107,114,128,0.70)"   : "rgba(148,163,184,0.44)";
+  const activeLabelColor   = isLight ? "#111827"                  : "rgba(255,255,255,0.92)";
+  const inactiveLabelColor = isLight ? "rgba(107,114,128,0.65)"   : "rgba(148,163,184,0.40)";
+  const badgeBorder        = isLight ? "#FFFFFF"                  : "rgba(5,5,8,0.9)";
 
   return (
     <div

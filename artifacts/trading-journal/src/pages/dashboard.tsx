@@ -409,7 +409,7 @@ const DayDetailSheet = memo(function DayDetailSheet({
             {isLoading && (
               <div>
                 {[0, 1, 2].map(i => (
-                  <div key={i} style={{ padding: "12px 20px", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.055)" : "none" }}>
+                  <div key={i} style={{ padding: "12px 20px", borderBottom: i < 2 ? `1px solid var(--dash-metric-border)` : "none" }}>
                     <div className="flex items-center justify-between">
                       <div className="h-4 w-28 rounded-lg shimmer-loading" />
                       <div className="h-4 w-16 rounded-lg shimmer-loading" />
@@ -666,7 +666,7 @@ const CalendarHeatmap = memo(function CalendarHeatmap({
       const intensity = Math.min(Math.abs(d.pnl) / maxAbs, 1);
       if (d.pnl > 0) styles[dateStr] = { backgroundColor: `rgba(52,211,153,${0.12 + intensity * 0.55})`, borderColor: `rgba(52,211,153,${0.2 + intensity * 0.3})` };
       else if (d.pnl < 0) styles[dateStr] = { backgroundColor: `rgba(248,113,113,${0.12 + intensity * 0.55})`, borderColor: `rgba(248,113,113,${0.2 + intensity * 0.3})` };
-      else styles[dateStr] = { backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)" };
+      else styles[dateStr] = { backgroundColor: "var(--dash-metric-bg)", borderColor: "var(--dash-metric-border)" };
     });
     return styles;
   }, [dayMap, maxAbs]);
