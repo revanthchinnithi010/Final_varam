@@ -747,10 +747,10 @@ body.tj-modal-open .animate-pulse {
 
 /* Light mode override for segment bar */
 .light .dash-segment-bar {
-  background: #FFFFFF;
+  background: #dcdde1;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #c8c9cd;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .light .dash-segment-bar::before { background: none; }
