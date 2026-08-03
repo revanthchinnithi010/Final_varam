@@ -33,12 +33,12 @@ export default function Balances() {
   const { currency, setCurrency } = useCurrencyStore();
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "#000000" }}>
+    <div className="flex flex-col h-full" style={{ background: "var(--balances-bg)" }}>
 
       {/* ── Secondary header — back-arrow left, title centred, USD/INR toggle right ── */}
       <div
         className="flex-shrink-0 flex items-center justify-between px-5"
-        style={{ height: 56, borderBottom: "1px solid #262626" }}
+        style={{ height: 56, borderBottom: "1px solid var(--balances-header-border)" }}
       >
         <button
           onClick={() => navigate("/")}
@@ -46,15 +46,15 @@ export default function Balances() {
           style={{ width: 32, height: 32, background: "transparent" }}
           aria-label="Back"
         >
-          <ArrowLeft className="w-5 h-5" style={{ color: "#E8E8E8" }} />
+          <ArrowLeft className="w-5 h-5" style={{ color: "var(--balances-icon-color)" }} />
         </button>
-        <span className="font-semibold" style={{ color: "#F3F3F3", fontSize: 17 }}>
+        <span className="font-semibold" style={{ color: "var(--balances-title-color)", fontSize: 17 }}>
           Balances
         </span>
         <button
           onClick={() => setCurrency(currency === "USD" ? "INR" : "USD")}
           className="flex items-center justify-center gap-1 rounded-full active:scale-95 transition-transform"
-          style={{ width: 32, height: 32, background: "transparent", color: "#E8E8E8" }}
+          style={{ width: 32, height: 32, background: "transparent", color: "var(--balances-icon-color)" }}
           aria-label={`Switch to ${currency === "USD" ? "INR" : "USD"}`}
           title={`Switch to ${currency === "USD" ? "INR (₹)" : "USD ($)"}`}
         >

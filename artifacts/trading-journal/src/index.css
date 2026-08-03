@@ -262,6 +262,10 @@
   /* ── Dashboard-specific tokens ───────────────────────────────── */
   --dash-bg:                   #000000;
   --dash-overlay-bg:           #000000;
+  --balances-bg:               #000000;
+  --balances-header-border:    #262626;
+  --balances-icon-color:       #E8E8E8;
+  --balances-title-color:      #F3F3F3;
   --dash-sheet-bg:             linear-gradient(180deg, #0a0a0a 0%, #000000 40%, #050508 100%);
   --dash-sheet-border:         rgba(255, 255, 255, 0.08);
   --dash-handle-bg:            rgba(255, 255, 255, 0.15);
@@ -373,6 +377,10 @@
 
   /* ── Dashboard-specific tokens (light) ──────────────────────── */
   --dash-bg:                   #FFFFFF;
+  --balances-bg:               #dcdde1;
+  --balances-header-border:    #c8c9cd;
+  --balances-icon-color:       #1a1a2e;
+  --balances-title-color:      #111827;
   --dash-overlay-bg:           #FFFFFF;
   --dash-sheet-bg:             #FFFFFF;
   --dash-sheet-border:         rgba(0, 0, 0, 0.08);
