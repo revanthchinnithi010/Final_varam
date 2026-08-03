@@ -208,6 +208,47 @@ export class AlertEngine {
         },
         "AlertEngine: alerts loaded",
       );
+
+      // ── Fix D: Ensure live ticks flow for every active alert symbol ──────────
+      // marketData.start([]) boots with zero subscriptions; symbols reach the
+      // engine only via the watchlist.  Any alert whose symbol is not in the
+      // watchlist would never receive a tick and therefore never evaluate.
+      // Subscribing here after every reload (including the 60-second refresh)
+      // guarantees coverage regardless of watchlist state.
+      const alertSymbols = new Set<string>();
+      for (const a of this.activeAlerts.values())     alertSymbols.add(a.symbol);
+      for (const z of this.activeZones.values())      alertSymbols.add(z.symbol);
+      for (const t of this.activeTrendlines.values()) alertSymbols.add(t.symbol);
+      for (const sym of alertSymbols) {
+        this.marketData.subscribe(sym);
+      }
+
+      // ── Fix B: Seed zone states from latest price; clear stale suppression ──
+      // On every reload (startup, 60-second refresh, and post-cooldown restore)
+      // we snapshot the current price for each active zone.  This has two
+      // effects:
+      //   1. A newly registered zone whose price is already inside gets its
+      //      state seeded to "inside" without adding to enterSuppressed, so the
+      //      engine correctly waits for an outside→inside transition to fire.
+      //   2. After the 120 s cooldown expires, if price has moved outside while
+      //      the zone was absent from activeZones (and therefore evaluateZones
+      //      could not clear enterSuppressed), we clear it here so the next
+      //      re-entry fires correctly.
+      for (const [id, zone] of this.activeZones.entries()) {
+        const latestTick = this.marketData.getLatestTick(zone.symbol);
+        if (latestTick !== undefined) {
+          const p = latestTick.price;
+          const seeded: ZoneState =
+            p < zone.lowerPrice ? "below" :
+            p > zone.upperPrice ? "above" : "inside";
+          this.zoneStates.set(id, seeded);
+          // Price is currently outside — any leftover suppression is stale.
+          if (seeded !== "inside") {
+            this.enterSuppressed.delete(id);
+          }
+        }
+      }
+
     } catch (err) {
       logger.error({ err }, "AlertEngine: failed to load alerts");
     }
@@ -275,28 +316,43 @@ export class AlertEngine {
       const lastState = this.zoneStates.get(id);
       this.zoneStates.set(id, currentState);
 
+      // Fix A: loadAlerts() seeds zoneStates from the latest cached price on
+      // every reload, so lastState is undefined only in the narrow window where
+      // a zone was just registered but no price has been cached for its symbol
+      // yet.  In that case, seed the state here and defer evaluation to the
+      // next tick.  Critically: we do NOT add to enterSuppressed here, so a
+      // zone created while price is already inside will fire on the next
+      // outside→inside transition rather than being permanently blocked.
       if (lastState === undefined) continue;
 
       const cond = zone.condition;
       let shouldFire = false;
 
       if (cond === "enter") {
-        // Clear suppression when price exits the zone
         if (currentState !== "inside") {
+          // Price exited the zone — clear suppression so the next entry fires.
+          // Fix B: this is the only place enterSuppressed is cleared for live
+          // ticks.  loadAlerts() handles the cooldown-window case where the
+          // zone was absent from activeZones while price moved outside.
           this.enterSuppressed.delete(id);
-        } else if (currentState === "inside" && lastState !== "inside" && !this.enterSuppressed.has(id)) {
-          // Price just entered from outside and we haven't already fired
+        } else if (lastState !== "inside" && !this.enterSuppressed.has(id)) {
+          // Fix A: outside → inside transition (lastState is guaranteed
+          // non-undefined here).  Fire once and suppress until next exit.
           this.enterSuppressed.add(id);
           shouldFire = true;
         }
-      } else if (cond === "touch" || cond === "retest") {
+        // currentState === "inside" && lastState === "inside": still inside — no-op.
+      } else if (cond === "touch") {
+        // Fire on every outside → inside crossing (no long-term suppression).
+        shouldFire = currentState === "inside" && lastState !== "inside";
+      } else if (cond === "retest") {
         shouldFire = currentState === "inside" && lastState !== "inside";
       } else if (cond === "break") {
         shouldFire = currentState !== "inside" && lastState === "inside";
       }
 
       if (shouldFire) {
-        // "enter" keeps the zone alive so it can fire again on re-entry
+        // "enter" keeps the zone alive so it can fire again on re-entry.
         await this.fireZoneAlert(zone, tick.price, currentState, cond === "enter");
       }
     }

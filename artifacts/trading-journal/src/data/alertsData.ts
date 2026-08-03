@@ -373,4 +373,14 @@ export const NOTIFICATION_HISTORY = [
 ];
 
 export const TIMEFRAMES = ["1M", "5M", "15M", "30M", "1H", "4H", "1D", "1W"];
-export const SYMBOLS = ["NAS100", "US30", "XAUUSD", "BTCUSDT", "ETHUSDT", "EURUSD", "USOIL", "SOLUSDT", "DOGEUSDT", "PEPEUSDT"];
+
+// Must stay in sync with ALERT_SYMBOLS in artifacts/api-server/src/lib/symbols.ts.
+// Crypto uses the plain USD suffix (BTCUSD, not BTCUSDT) to match the internal
+// symbol name emitted by the Delta Exchange provider's tick events, ensuring
+// zone.symbol === tick.symbol in the AlertEngine evaluateZones() comparisons.
+export const SYMBOLS = [
+  "NAS100", "US30",
+  "XAUUSD", "EURUSD", "GBPJPY",
+  "USOIL",  "UKOIL",
+  "BTCUSD", "ETHUSD", "SOLUSD", "DOGEUSD", "PEPEUSD",
+];
