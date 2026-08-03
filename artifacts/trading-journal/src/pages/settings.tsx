@@ -291,22 +291,24 @@ function DeltaPanel() {
 
 /* ─── Telegram Panel ────────────────────────────────────────────── */
 function TelegramPanel() {
-  const [botToken,   setBotToken]   = useState("");
-  const [chatId,     setChatId]     = useState("");
-  const [showToken,  setShowToken]  = useState(false);
-  const [status,     setStatus]     = useState<"connected" | "disconnected">("disconnected");
-  const [loading,    setLoading]    = useState<"connect" | "test" | "disconnect" | null>(null);
-  const [error,      setError]      = useState<string | null>(null);
-  const [success,    setSuccess]    = useState<string | null>(null);
-  const [masked,     setMasked]     = useState<{ botToken: string | null; chatId: string | null }>({ botToken: null, chatId: null });
+  const [botToken,      setBotToken]      = useState("");
+  const [chatId,        setChatId]        = useState("");
+  const [showToken,     setShowToken]     = useState(false);
+  const [status,        setStatus]        = useState<"connected" | "disconnected">("disconnected");
+  const [globalEnabled, setGlobalEnabled] = useState(true);
+  const [loading,       setLoading]       = useState<"connect" | "test" | "disconnect" | "toggle" | null>(null);
+  const [error,         setError]         = useState<string | null>(null);
+  const [success,       setSuccess]       = useState<string | null>(null);
+  const [masked,        setMasked]        = useState<{ botToken: string | null; chatId: string | null }>({ botToken: null, chatId: null });
 
   const fetchStatus = useCallback(async () => {
     try {
       const d = await fetch("/api/telegram/status").then(r => r.json()) as {
-        configured: boolean; tokenMasked?: string | null; chatId?: string | null;
+        configured: boolean; tokenMasked?: string | null; chatId?: string | null; globalEnabled?: boolean;
       };
       setStatus(d.configured ? "connected" : "disconnected");
       setMasked({ botToken: d.tokenMasked ?? null, chatId: d.chatId ?? null });
+      setGlobalEnabled(d.globalEnabled ?? true);
     } catch { /* ignore */ }
   }, []);
 
@@ -332,6 +334,16 @@ function TelegramPanel() {
     } else {
       setError(d.error ?? "Connection failed — please try again");
     }
+  };
+
+  const toggle = async (enabled: boolean) => {
+    setGlobalEnabled(enabled);
+    setLoading("toggle");
+    await fetch("/api/telegram/toggle", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    }).catch(() => {});
+    setLoading(null);
   };
 
   const test = async () => {
@@ -366,6 +378,38 @@ function TelegramPanel() {
           </div>
         </div>
         <StatusBadge status={isLive ? "connected" : "disconnected"} />
+      </div>
+
+      {/* Global enable toggle — always visible */}
+      <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl"
+        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div>
+          <p className="text-[13px] font-semibold text-white">Enable Telegram Alerts</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {globalEnabled ? "All triggered alerts will be forwarded to Telegram" : "Alerts paused — bot stays connected"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void toggle(!globalEnabled)}
+          disabled={loading === "toggle"}
+          aria-label="Toggle Telegram alerts"
+          style={{
+            width: 46, height: 26, borderRadius: 13, flexShrink: 0, position: "relative",
+            background: globalEnabled ? "#0ea5e9" : "rgba(255,255,255,0.12)",
+            border: "none", cursor: "pointer",
+            transition: "background 200ms",
+            opacity: loading === "toggle" ? 0.6 : 1,
+          }}
+        >
+          <span style={{
+            position: "absolute", top: 3,
+            left: globalEnabled ? 23 : 3,
+            width: 20, height: 20, borderRadius: "50%",
+            background: globalEnabled ? "#fff" : "rgba(255,255,255,0.70)",
+            transition: "left 200ms",
+          }} />
+        </button>
       </div>
 
       {isLive && (

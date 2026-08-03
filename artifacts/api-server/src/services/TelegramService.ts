@@ -1,11 +1,11 @@
 import { db, settingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
+import { AppConfigService } from "./AppConfigService.js";
 
 const TELEGRAM_API = "https://api.telegram.org";
 
-const KEY_TOKEN   = "telegram_bot_token";
-const KEY_CHAT_ID = "telegram_chat_id";
+const KEY_GLOBAL_ENABLED = "telegram_global_enabled";
 
 function maskToken(token: string): string {
   if (token.length <= 12) return "***";
@@ -13,9 +13,10 @@ function maskToken(token: string): string {
 }
 
 export class TelegramService {
-  private botToken: string | undefined;
-  private chatId:   string | undefined;
-  private enabled:  boolean = false;
+  private botToken:      string | undefined;
+  private chatId:        string | undefined;
+  private enabled:       boolean = false;
+  private globalEnabled: boolean = true;  // global on/off toggle (does not disconnect)
 
   constructor() {
     this.botToken = process.env["TELEGRAM_BOT_TOKEN"];
@@ -24,27 +25,34 @@ export class TelegramService {
   }
 
   async init(): Promise<void> {
+    // Load global enabled flag from settings table
     try {
       const rows = await db.select().from(settingsTable)
-        .where(eq(settingsTable.key, KEY_TOKEN));
-      const chatRows = await db.select().from(settingsTable)
-        .where(eq(settingsTable.key, KEY_CHAT_ID));
+        .where(eq(settingsTable.key, KEY_GLOBAL_ENABLED));
+      if (rows[0]) {
+        this.globalEnabled = rows[0].value !== "false";
+      }
+    } catch (err) {
+      logger.warn({ err }, "TelegramService: could not load global enabled flag");
+    }
 
-      const dbToken  = rows[0]?.value   ?? undefined;
-      const dbChatId = chatRows[0]?.value ?? undefined;
+    // Load encrypted credentials from AppConfigService
+    try {
+      const dbToken  = await AppConfigService.get("TELEGRAM_BOT_TOKEN");
+      const dbChatId = await AppConfigService.get("TELEGRAM_CHAT_ID");
 
       if (dbToken && dbChatId) {
         this.botToken = dbToken;
         this.chatId   = dbChatId;
         this.enabled  = true;
         logger.info(
-          { tokenMasked: maskToken(dbToken), chatId: dbChatId, source: "db" },
-          "TelegramService: loaded credentials from DB",
+          { tokenMasked: maskToken(dbToken), chatId: dbChatId, source: "db_encrypted" },
+          "TelegramService: loaded credentials from encrypted DB",
         );
         return;
       }
     } catch (err) {
-      logger.warn({ err }, "TelegramService: could not load credentials from DB, using env vars");
+      logger.warn({ err }, "TelegramService: could not load credentials from AppConfigService, using env vars");
     }
 
     if (this.enabled) {
@@ -108,23 +116,12 @@ export class TelegramService {
       };
     }
 
-    // Step 3: Persist credentials to DB
+    // Step 3: Persist credentials encrypted via AppConfigService
     try {
-      await db.insert(settingsTable)
-        .values({ key: KEY_TOKEN, value: token, updatedAt: new Date() })
-        .onConflictDoUpdate({
-          target: settingsTable.key,
-          set:    { value: token, updatedAt: new Date() },
-        });
-
-      await db.insert(settingsTable)
-        .values({ key: KEY_CHAT_ID, value: chatId, updatedAt: new Date() })
-        .onConflictDoUpdate({
-          target: settingsTable.key,
-          set:    { value: chatId, updatedAt: new Date() },
-        });
+      await AppConfigService.set("TELEGRAM_BOT_TOKEN", token);
+      await AppConfigService.set("TELEGRAM_CHAT_ID", chatId);
     } catch (err) {
-      logger.error({ err }, "TelegramService: failed to persist credentials to DB");
+      logger.error({ err }, "TelegramService: failed to persist credentials to encrypted DB");
       return { success: false, error: "Failed to save credentials to database — please try again.", errorType: "unknown" };
     }
 
@@ -132,48 +129,75 @@ export class TelegramService {
     this.chatId   = chatId;
     this.enabled  = true;
 
-    logger.info({ tokenMasked: maskToken(token), chatId }, "TelegramService: configured via UI");
+    logger.info({ tokenMasked: maskToken(token), chatId }, "TelegramService: configured via UI (encrypted)");
     return { success: true };
   }
 
   async disconnect(): Promise<void> {
     try {
-      await db.delete(settingsTable).where(eq(settingsTable.key, KEY_TOKEN));
-      await db.delete(settingsTable).where(eq(settingsTable.key, KEY_CHAT_ID));
+      await AppConfigService.delete("TELEGRAM_BOT_TOKEN");
+      await AppConfigService.delete("TELEGRAM_CHAT_ID");
     } catch (err) {
-      logger.warn({ err }, "TelegramService: error clearing DB config");
+      logger.warn({ err }, "TelegramService: error clearing encrypted DB config");
     }
     this.botToken = process.env["TELEGRAM_BOT_TOKEN"];
     this.chatId   = process.env["TELEGRAM_CHAT_ID"];
     this.enabled  = !!(this.botToken && this.chatId);
-    logger.info("TelegramService: disconnected (DB config cleared)");
+    logger.info("TelegramService: disconnected (encrypted credentials cleared)");
+  }
+
+  /** Global on/off toggle — does not remove credentials, just suppresses delivery. */
+  async setGlobalEnabled(value: boolean): Promise<void> {
+    this.globalEnabled = value;
+    try {
+      await db.insert(settingsTable)
+        .values({ key: KEY_GLOBAL_ENABLED, value: String(value), updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settingsTable.key,
+          set:    { value: String(value), updatedAt: new Date() },
+        });
+      logger.info({ globalEnabled: value }, "TelegramService: global enabled flag updated");
+    } catch (err) {
+      logger.warn({ err }, "TelegramService: failed to persist global enabled flag");
+    }
   }
 
   isEnabled(): boolean {
     return this.enabled;
   }
 
+  isGlobalEnabled(): boolean {
+    return this.globalEnabled;
+  }
+
   getStatus(): {
-    configured: boolean;
-    chatId: string | null;
-    tokenMasked: string | null;
-    source: "db" | "env" | "none";
+    configured:    boolean;
+    chatId:        string | null;
+    tokenMasked:   string | null;
+    source:        "db" | "env" | "none";
+    globalEnabled: boolean;
   } {
     const hasEnv = !!(process.env["TELEGRAM_BOT_TOKEN"] && process.env["TELEGRAM_CHAT_ID"]);
     return {
-      configured:  this.enabled,
-      chatId:      this.chatId ?? null,
-      tokenMasked: this.botToken ? maskToken(this.botToken) : null,
-      source:      this.enabled ? (hasEnv ? "env" : "db") : "none",
+      configured:    this.enabled,
+      chatId:        this.chatId ?? null,
+      tokenMasked:   this.botToken ? maskToken(this.botToken) : null,
+      source:        this.enabled ? (hasEnv ? "env" : "db") : "none",
+      globalEnabled: this.globalEnabled,
     };
   }
 
   async sendMessage(
-    text: string,
-    chatId?: string,
+    text:            string,
+    chatId?:         string,
+    bypassGlobal?:   boolean,
   ): Promise<{ success: boolean; telegramResponse?: unknown; error?: string }> {
     if (!this.enabled || !this.botToken) {
       return { success: false, error: "Telegram not configured" };
+    }
+
+    if (!bypassGlobal && !this.globalEnabled) {
+      return { success: false, error: "Telegram alerts are globally disabled" };
     }
 
     const target  = chatId ?? this.chatId!;
@@ -212,7 +236,12 @@ export class TelegramService {
   async sendTestMessage(): Promise<{
     success: boolean; configured: boolean; telegramResponse?: unknown; error?: string;
   }> {
-    const result = await this.sendMessage("✅ <b>TradeVault Test Message</b>\n\nYour Telegram alerts are working correctly.");
+    // Test always bypasses globalEnabled so the user can verify bot connectivity
+    const result = await this.sendMessage(
+      "✅ <b>TradeVault Test Message</b>\n\nYour Telegram alerts are working correctly.",
+      undefined,
+      true,
+    );
     return { ...result, configured: this.enabled };
   }
 
@@ -294,11 +323,11 @@ export class TelegramService {
     direction: string; notes?: string | null;
   }): Promise<boolean> {
     const drawingEmojis: Record<string, string> = {
-      trendline:      "📈",
-      ray:            "📐",
-      horizontal_line:"➡️",
-      rectangle:      "📦",
-      channel:        "🛤️",
+      trendline:       "📈",
+      ray:             "📐",
+      horizontal_line: "➡️",
+      rectangle:       "📦",
+      channel:         "🛤️",
     };
     const dirEmoji = opts.direction.includes("above") ? "🟢" : "🔴";
     const dtLabel  = opts.drawingType.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());

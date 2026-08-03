@@ -7,6 +7,10 @@ const ConfigBody = z.object({
   chatId: z.string().min(1, "Chat ID is required"),
 });
 
+const ToggleBody = z.object({
+  enabled: z.boolean(),
+});
+
 export function createTelegramRouter(telegram: TelegramService): IRouter {
   const router: IRouter = Router();
 
@@ -31,6 +35,17 @@ export function createTelegramRouter(telegram: TelegramService): IRouter {
   router.delete("/telegram/config", async (_req, res): Promise<void> => {
     await telegram.disconnect();
     res.json({ success: true, configured: false });
+  });
+
+  /** Global enable/disable toggle — keeps credentials, suppresses/restores delivery. */
+  router.patch("/telegram/toggle", async (req, res): Promise<void> => {
+    const parsed = ToggleBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ success: false, error: "enabled (boolean) is required" });
+      return;
+    }
+    await telegram.setGlobalEnabled(parsed.data.enabled);
+    res.json({ success: true, globalEnabled: parsed.data.enabled });
   });
 
   router.post("/telegram/test", async (_req, res): Promise<void> => {
