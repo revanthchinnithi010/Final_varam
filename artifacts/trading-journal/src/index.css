@@ -349,7 +349,7 @@
   --chart-5: 263 83% 58%;  /* #7C3AED purple                               */
 
   /* ── Light surface tokens ────────────────────────────────────── */
-  --surface-header:            #dcdde1;
+  --surface-header:            rgba(255, 255, 255, 1.0);
   --surface-header-border:     rgba(0, 0, 0, 0.08);
   --surface-backdrop:          rgba(0, 0, 0, 0.30);
   --surface-btn-border:        rgba(0, 0, 0, 0.08);
