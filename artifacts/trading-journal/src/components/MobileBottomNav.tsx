@@ -83,10 +83,10 @@ export function MobileBottomNav() {
     : "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.40)";
   const wrapperGradient = isLight
     ? "linear-gradient(135deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.02) 40%, rgba(0,0,0,0.06) 100%)"
-    : "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 40%, rgba(0,0,0,0.30) 70%, rgba(0,0,0,0.55) 100%)";
+    : "linear-gradient(160deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.18) 40%, rgba(255,255,255,0.10) 70%, rgba(255,255,255,0.22) 100%)";
   const wrapperShadow = isLight
     ? "0 4px 20px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)"
-    : ["0 8px 32px rgba(0,0,0,0.70)", "0 2px 8px rgba(0,0,0,0.50)"].join(",");
+    : ["0 8px 32px rgba(0,0,0,0.70)", "0 2px 8px rgba(0,0,0,0.50)", "0 0 0 0.5px rgba(255,255,255,0.08)", "0 0 20px rgba(255,255,255,0.06)"].join(",");
 
   const activeIconColor    = isLight ? "#111827"                  : "#ffffff";
   const inactiveIconColor  = isLight ? "rgba(107,114,128,0.70)"   : "rgba(148,163,184,0.44)";
