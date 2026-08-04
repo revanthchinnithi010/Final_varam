@@ -5859,6 +5859,14 @@ export const MobileChartLayout = memo(function MobileChartLayout(props: MobileCh
     setShowSettings(false);
   }, [handleSettings]);
 
+  // Wrap handleSaveAsDefault so that clicking "Save as Default" advances the
+  // snapshot. Without this, Close (✕) would revert chartSettings back to the
+  // pre-open snapshot even after the user explicitly saved.
+  const handleSaveAsDefaultWrapped = useCallback((s: ChartSettings) => {
+    handleSaveAsDefault(s);
+    settingsSnapshotRef.current = s; // advance snapshot — Close can't revert past here
+  }, [handleSaveAsDefault]);
+
   // Routes symbol selection to the main chart (slot 0) or to a secondary MiniChart slot
   const handleSelectSymbol = useCallback((sym: string) => {
     if (activeChartSlot === 0 || layoutCount <= 1) {
@@ -6143,7 +6151,7 @@ export const MobileChartLayout = memo(function MobileChartLayout(props: MobileCh
       />
 
       {showIndicators  && <IndicatorsPanel anchorEl={null} onClose={() => setShowIndicators(false)} />}
-      {showSettings    && <ChartSettingsSheet settings={chartSettings} onChange={handleSettings} onSaveAsDefault={handleSaveAsDefault} onBack={handleBackFromSettings} onClose={handleCloseFromSettings} />}
+      {showSettings    && <ChartSettingsSheet settings={chartSettings} onChange={handleSettings} onSaveAsDefault={handleSaveAsDefaultWrapped} onBack={handleBackFromSettings} onClose={handleCloseFromSettings} />}
       {showAlertCenter && <AlertSheet onClose={() => setShowAlertCenter(false)} />}
 
 
