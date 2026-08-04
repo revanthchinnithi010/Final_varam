@@ -1,6 +1,9 @@
 import { memo, useRef, useState, useCallback, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 
+// ── Animation constants ────────────────────────────────────────────────────────
+const EASE_OPEN = "cubic-bezier(0.22,1,0.36,1)";
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 export function parseHexColor(hex: string): { r: number; g: number; b: number; a: number } {
