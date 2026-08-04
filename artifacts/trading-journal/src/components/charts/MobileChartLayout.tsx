@@ -2040,39 +2040,37 @@ const ChartSettingsSheet = memo(function ChartSettingsSheet({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 12px",
-        height: 60,
+        padding: "0 8px",
+        height: 52,
         flexShrink: 0,
         borderBottom: `1px solid ${DIVIDER}`,
         background: "#000000",
         position: "relative",
-        paddingTop: "env(safe-area-inset-top, 0px)",
       }}>
         {/* Back (←): close settings → re-open MoreSheet, preserve changes */}
         <button
           onClick={handleBack}
           aria-label="Back"
           style={{
-            width: 40, height: 40, borderRadius: "50%",
+            width: 40, height: 40, borderRadius: 10,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            color: "rgba(255,255,255,0.72)", cursor: "pointer",
+            background: "transparent", border: "none",
+            color: "rgba(255,255,255,0.70)", cursor: "pointer",
             flexShrink: 0, touchAction: "manipulation",
           }}
-          onPointerDown={e => { (e.currentTarget as HTMLElement).style.opacity = "0.55"; }}
+          onPointerDown={e => { (e.currentTarget as HTMLElement).style.opacity = "0.45"; }}
           onPointerUp={e   => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           onPointerCancel={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
         >
-          <ArrowLeft style={{ width: 18, height: 18 }} />
+          <ArrowLeft style={{ width: 20, height: 20 }} />
         </button>
 
         {/* Title — absolutely centered */}
         <span style={{
           position: "absolute", left: "50%", transform: "translateX(-50%)",
-          fontSize: 16, fontWeight: 700,
+          fontSize: 15, fontWeight: 700,
           color: "rgba(255,255,255,0.92)",
-          letterSpacing: "-0.02em",
+          letterSpacing: "-0.01em",
           pointerEvents: "none", whiteSpace: "nowrap",
         }}>
           Chart Settings
@@ -2083,14 +2081,13 @@ const ChartSettingsSheet = memo(function ChartSettingsSheet({
           onClick={handleCloseAll}
           aria-label="Close"
           style={{
-            width: 40, height: 40, borderRadius: "50%",
+            width: 40, height: 40, borderRadius: 10,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            color: "rgba(255,255,255,0.72)", cursor: "pointer",
+            background: "transparent", border: "none",
+            color: "rgba(255,255,255,0.70)", cursor: "pointer",
             flexShrink: 0, touchAction: "manipulation",
           }}
-          onPointerDown={e => { (e.currentTarget as HTMLElement).style.opacity = "0.55"; }}
+          onPointerDown={e => { (e.currentTarget as HTMLElement).style.opacity = "0.45"; }}
           onPointerUp={e   => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           onPointerCancel={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
         >
