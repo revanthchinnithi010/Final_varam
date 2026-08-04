@@ -2,7 +2,7 @@ import { memo, useState, useCallback, useRef, useEffect, useMemo, useLayoutEffec
 import { useLocation } from "wouter";
 import { createPortal } from "react-dom";
 import {
-  X, ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
+  X, ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp,
   Pencil, Plug, MoreHorizontal, Maximize2, Minimize2,
   LayoutGrid, Activity, Bell, List,
   BarChart2, RotateCcw, Settings2, Camera,
@@ -1916,31 +1916,41 @@ const ScaleTabContent = memo(function ScaleTabContent({ settings, h }: CSSSectio
 });
 
 
-// ── ChartSettingsSheet — full-screen slide-up modal (mobile-optimised) ────────
-// Replaces BottomSheet: no snap points, no drag, no height animation.
-// Open:  mount at translateY(100%), rAF flips to translateY(0) — 160ms transform.
-// Close: flip to translateY(100%), wait 165ms, then call onClose to unmount.
-// No backdrop blur (too expensive on mobile GPU).
-// Sticky header + sticky tab bar. Scrollable content. Safe-area aware.
+// ── ChartSettingsSheet — full-screen slide-from-right page ────────────────────
+// Navigation:
+//   onBack  → Back (←): animate slide-right, then re-open MoreOptionsSheet.
+//             Settings changes are preserved.
+//   onClose → Close (✕): animate slide-right, revert to snapshot, close all.
+// Open:  mount at translateX(100%), rAF flips to translateX(0) — 240ms.
+// Close: flip to translateX(100%), wait 215ms, then call callback to unmount.
+// Background: pure #000000 — fully covers the chart, no bleed-through.
+const CS_DUR_OPEN  = 240;
+const CS_DUR_CLOSE = 215;
+const CS_EASE_OPEN  = "cubic-bezier(0.22,1,0.36,1)";
+const CS_EASE_CLOSE = "cubic-bezier(0.4,0,0.6,1)";
+
 const ChartSettingsSheet = memo(function ChartSettingsSheet({
-  settings, onChange, onSaveAsDefault, onClose,
+  settings, onChange, onSaveAsDefault, onBack, onClose,
 }: {
   settings: ChartSettings;
   onChange: (s: ChartSettings) => void;
   onSaveAsDefault?: (s: ChartSettings) => void;
+  /** Back (←): preserve changes, re-open MoreOptionsSheet. */
+  onBack: () => void;
+  /** Close (✕): revert to snapshot, dismiss completely. */
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<"Candles"|"Appearance"|"Scale">("Candles");
 
-  // ── Open / close animation state ──────────────────────────────────────────
-  // visible: false → translateY(100%) on mount, then rAF flips to true → translateY(0)
-  const [visible, setVisible] = useState(false);
-  const [closing, setClosing] = useState(false);
+  // ── Open / close animation ─────────────────────────────────────────────────
+  const [visible,  setVisible]  = useState(false);
+  const [closing,  setClosing]  = useState(false);
   const closingRef = useRef(false);
 
-  useLayoutEffect(() => {
-    const id = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(id);
+  useEffect(() => {
+    let rafId: number;
+    const id = setTimeout(() => { rafId = requestAnimationFrame(() => setVisible(true)); }, 0);
+    return () => { clearTimeout(id); cancelAnimationFrame(rafId); };
   }, []);
 
   // Lock body scroll while open
@@ -1950,13 +1960,15 @@ const ChartSettingsSheet = memo(function ChartSettingsSheet({
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  const handleClose = useCallback(() => {
+  const animateClose = useCallback((cb: () => void) => {
     if (closingRef.current) return;
     closingRef.current = true;
     setClosing(true);
-    const t = setTimeout(() => onClose(), 165);
-    return () => clearTimeout(t);
-  }, [onClose]);
+    setTimeout(cb, CS_DUR_CLOSE + 5);
+  }, []);
+
+  const handleBack      = useCallback(() => animateClose(onBack),  [animateClose, onBack]);
+  const handleCloseAll  = useCallback(() => animateClose(onClose), [animateClose, onClose]);
 
   // settingsRef lets `p` read the latest settings without being in the dep array.
   const settingsRef = useRef(settings);
@@ -2000,7 +2012,10 @@ const ChartSettingsSheet = memo(function ChartSettingsSheet({
     priceScaleAuto:     (v: boolean) => p({ priceScaleAutoScale: v }),
   }), [p]);
 
-  const slideY = (visible && !closing) ? "translateY(0)" : "translateY(100%)";
+  const slideX = (visible && !closing) ? "translateX(0)" : "translateX(100%)";
+  const slideTransition = (visible && !closing)
+    ? `transform ${CS_DUR_OPEN}ms ${CS_EASE_OPEN}`
+    : `transform ${CS_DUR_CLOSE}ms ${CS_EASE_CLOSE}`;
 
   return createPortal(
     <div
@@ -2008,68 +2023,78 @@ const ChartSettingsSheet = memo(function ChartSettingsSheet({
         position: "fixed",
         inset: 0,
         zIndex: 2000,
-        background: "rgba(10,12,16,0.99)",
+        background: "#000000",
         display: "flex",
         flexDirection: "column",
-        transform: slideY,
-        transition: "transform 160ms cubic-bezier(0.4,0,0.2,1)",
+        transform: slideX,
+        transition: slideTransition,
         willChange: "transform",
-        paddingTop: "env(safe-area-inset-top, 0px)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
         overscrollBehavior: "contain",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
       }}
     >
-      {/* ── Sticky header ── */}
+      {/* ── Sticky header — matches full-screen pages (Alerts, Settings, Notifications) ── */}
       <div style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 4px 0 2px",
-        height: 52,
+        padding: "0 12px",
+        height: 60,
         flexShrink: 0,
         borderBottom: `1px solid ${DIVIDER}`,
-        background: "rgba(10,12,16,0.99)",
+        background: "#000000",
+        position: "relative",
+        paddingTop: "env(safe-area-inset-top, 0px)",
       }}>
+        {/* Back (←): close settings → re-open MoreSheet, preserve changes */}
         <button
-          onClick={handleClose}
+          onClick={handleBack}
+          aria-label="Back"
           style={{
-            display: "flex", alignItems: "center", gap: 4,
-            padding: "8px 10px", borderRadius: 10,
-            background: "transparent", border: "none",
-            color: ACCENT, cursor: "pointer",
-            fontSize: 14, fontWeight: 600,
-            touchAction: "manipulation",
+            width: 40, height: 40, borderRadius: "50%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            color: "rgba(255,255,255,0.72)", cursor: "pointer",
+            flexShrink: 0, touchAction: "manipulation",
           }}
-          onPointerDown={e => { (e.currentTarget as HTMLElement).style.opacity = "0.65"; }}
+          onPointerDown={e => { (e.currentTarget as HTMLElement).style.opacity = "0.55"; }}
           onPointerUp={e   => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           onPointerCancel={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
         >
-          <ChevronLeft style={{ width: 18, height: 18, strokeWidth: 2.5 }} />
-          <span>Back</span>
+          <ArrowLeft style={{ width: 18, height: 18 }} />
         </button>
 
+        {/* Title — absolutely centered */}
         <span style={{
           position: "absolute", left: "50%", transform: "translateX(-50%)",
-          fontSize: 15, fontWeight: 700, color: TEXT_HI,
+          fontSize: 16, fontWeight: 700,
+          color: "rgba(255,255,255,0.92)",
+          letterSpacing: "-0.02em",
           pointerEvents: "none", whiteSpace: "nowrap",
         }}>
           Chart Settings
         </span>
 
+        {/* Close (✕): dismiss all, revert unsaved changes */}
         <button
-          onClick={handleClose}
+          onClick={handleCloseAll}
+          aria-label="Close"
           style={{
-            padding: "8px 14px", borderRadius: 10,
-            background: ACCENT_BG,
-            border: `1px solid ${ACCENT_BORDER}`,
-            color: ACCENT, fontSize: 13, fontWeight: 700,
-            cursor: "pointer", touchAction: "manipulation",
+            width: 40, height: 40, borderRadius: "50%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            color: "rgba(255,255,255,0.72)", cursor: "pointer",
+            flexShrink: 0, touchAction: "manipulation",
           }}
-          onPointerDown={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
+          onPointerDown={e => { (e.currentTarget as HTMLElement).style.opacity = "0.55"; }}
           onPointerUp={e   => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           onPointerCancel={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
         >
-          Done
+          <X style={{ width: 18, height: 18 }} />
         </button>
       </div>
 
@@ -2080,7 +2105,7 @@ const ChartSettingsSheet = memo(function ChartSettingsSheet({
         padding: "10px 14px",
         borderBottom: `1px solid ${DIVIDER}`,
         flexShrink: 0,
-        background: "rgba(10,12,16,0.99)",
+        background: "#000000",
       }}>
         {(["Candles","Appearance","Scale"] as const).map(t => {
           const active = tab === t;
@@ -2139,7 +2164,7 @@ const ChartSettingsSheet = memo(function ChartSettingsSheet({
         alignItems: "center",
         gap: 8,
         flexShrink: 0,
-        background: "rgba(10,12,16,0.99)",
+        background: "#000000",
       }}>
         <button
           onClick={() => onChange(DEFAULT_CHART_SETTINGS)}
@@ -5812,9 +5837,30 @@ export const MobileChartLayout = memo(function MobileChartLayout(props: MobileCh
   // ── Stable sheet close handlers — MUST be useCallback so memo'd sheets
   // don't re-render from a new inline-arrow onClose prop on every parent render ──
   const handleCloseDrawingSheet = useCallback(() => setShowDrawingSheet(false), []);
-  const handleCloseSettings     = useCallback(() => setShowSettings(false),    []);
   const handleCloseObjectTree   = useCallback(() => setShowObjectTree(false),  []);
-  const handleOpenSettings      = useCallback(() => { setShowSettings(true); }, []);
+
+  // Settings snapshot — captured at open time so Close (✕) can revert changes.
+  const settingsSnapshotRef = useRef<ChartSettings | null>(null);
+
+  const handleOpenSettings = useCallback(() => {
+    settingsSnapshotRef.current = chartSettings;   // snapshot before opening
+    setShowSettings(true);
+  }, [chartSettings]);
+
+  // Back (←): dismiss settings, re-open MoreOptionsSheet. Changes preserved.
+  const handleBackFromSettings = useCallback(() => {
+    setShowSettings(false);
+    setShowMoreSheet(true);
+  }, []);
+
+  // Close (✕): revert settings to snapshot at open time, then dismiss all.
+  const handleCloseFromSettings = useCallback(() => {
+    if (settingsSnapshotRef.current) {
+      handleSettings(settingsSnapshotRef.current);
+      settingsSnapshotRef.current = null;
+    }
+    setShowSettings(false);
+  }, [handleSettings]);
 
   // Routes symbol selection to the main chart (slot 0) or to a secondary MiniChart slot
   const handleSelectSymbol = useCallback((sym: string) => {
@@ -6100,7 +6146,7 @@ export const MobileChartLayout = memo(function MobileChartLayout(props: MobileCh
       />
 
       {showIndicators  && <IndicatorsPanel anchorEl={null} onClose={() => setShowIndicators(false)} />}
-      {showSettings    && <ChartSettingsSheet settings={chartSettings} onChange={handleSettings} onSaveAsDefault={handleSaveAsDefault} onClose={handleCloseSettings} />}
+      {showSettings    && <ChartSettingsSheet settings={chartSettings} onChange={handleSettings} onSaveAsDefault={handleSaveAsDefault} onBack={handleBackFromSettings} onClose={handleCloseFromSettings} />}
       {showAlertCenter && <AlertSheet onClose={() => setShowAlertCenter(false)} />}
 
 
