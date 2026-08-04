@@ -582,6 +582,7 @@ export const Layout = memo(function Layout({
             position:     "relative",
             background:   "var(--surface-header)",
             borderBottom: headerVisible ? "1px solid var(--surface-header-border)" : "none",
+            boxShadow:    headerVisible ? "var(--surface-header-glow)" : "none",
             pointerEvents: headerVisible ? "auto" : "none",
           }}
         >

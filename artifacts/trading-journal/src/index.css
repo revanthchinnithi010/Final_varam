@@ -238,7 +238,8 @@
 
   /* ── Surface tokens ──────────────────────────────────────────── */
   --surface-header:            #000000;
-  --surface-header-border:     rgba(255, 255, 255, 0.05);
+  --surface-header-border:     rgba(255, 255, 255, 0.18);
+  --surface-header-glow:       0 1px 0 rgba(255, 255, 255, 0.06), 0 2px 16px rgba(255, 255, 255, 0.04);
   --surface-backdrop:          rgba(0, 0, 0, 0.70);
   --surface-btn-border:        rgba(255, 255, 255, 0.06);
   --surface-btn-active-border: rgba(255, 255, 255, 0.16);
@@ -459,7 +460,8 @@
   --chart-4:  38 90%  58%;
   --chart-5: 230 72%  62%;
   --surface-header:            #000000;
-  --surface-header-border:     rgba(255, 255, 255, 0.05);
+  --surface-header-border:     rgba(255, 255, 255, 0.18);
+  --surface-header-glow:       0 1px 0 rgba(255, 255, 255, 0.06), 0 2px 16px rgba(255, 255, 255, 0.04);
   --surface-backdrop:          rgba(0, 0, 0, 0.70);
   --surface-btn-border:        rgba(255, 255, 255, 0.06);
   --surface-btn-active-border: rgba(255, 255, 255, 0.16);
