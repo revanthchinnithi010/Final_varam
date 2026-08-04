@@ -739,23 +739,33 @@ const AddTradeSheet = memo(function AddTradeSheet({
           </span>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 6, padding: "14px 18px 0", flexShrink: 0 }}>
-          {(["details", "analysis"] as ModalTab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setModalTab(tab)}
-              style={{
-                padding: "7px 16px", borderRadius: 12, fontSize: 12.5, fontWeight: 600,
-                cursor: "pointer",
-                border: modalTab === tab ? "1px solid rgba(99,102,241,0.25)" : "1px solid transparent",
-                background: modalTab === tab ? "rgba(99,102,241,0.12)" : "transparent",
-                color: modalTab === tab ? "hsl(var(--primary))" : "rgba(148,163,184,0.7)",
-                transition: "all 0.15s",
-              }}
-            >
-              {tab === "details" ? "Trade Details" : "Analysis & Tags"}
-            </button>
+        {/* Step indicator */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px 0", flexShrink: 0 }}>
+          {(["details", "analysis"] as ModalTab[]).map((tab, i) => (
+            <div key={tab} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 6,
+                opacity: modalTab === tab ? 1 : 0.35,
+                transition: "opacity 0.2s",
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: "50%",
+                  background: modalTab === tab ? "hsl(var(--primary))" : "rgba(255,255,255,0.12)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, fontWeight: 700,
+                  color: modalTab === tab ? "#fff" : "rgba(255,255,255,0.5)",
+                  transition: "background 0.2s",
+                }}>
+                  {i + 1}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: modalTab === tab ? "#f1f5f9" : "rgba(148,163,184,0.6)" }}>
+                  {tab === "details" ? "Trade Details" : "Analysis & Tags"}
+                </span>
+              </div>
+              {i === 0 && (
+                <div style={{ width: 24, height: 1, background: "rgba(255,255,255,0.10)" }} />
+              )}
+            </div>
           ))}
         </div>
 
@@ -763,15 +773,16 @@ const AddTradeSheet = memo(function AddTradeSheet({
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "18px 18px 8px", WebkitOverflowScrolling: "touch" as any }}>
           <Form {...form}>
             <form id="tradeForm" onSubmit={form.handleSubmit(onSubmit)}>
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait" initial={false}>
                 {modalTab === "details" && (
                   <motion.div
                     key="details"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.18 }}
+                    initial={{ x: "-100%", opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: "-100%", opacity: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                     className="space-y-4"
+                    style={{ willChange: "transform" }}
                   >
                     {/* Symbol + Side + Broker */}
                     <div className="grid grid-cols-3 gap-3">
@@ -895,11 +906,12 @@ const AddTradeSheet = memo(function AddTradeSheet({
                 {modalTab === "analysis" && (
                   <motion.div
                     key="analysis"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.18 }}
+                    initial={{ x: "100%", opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: "100%", opacity: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                     className="space-y-5"
+                    style={{ willChange: "transform" }}
                   >
                     {/* TradingView Link */}
                     <FormField control={form.control} name="tvLink" render={({ field }) => (
@@ -1007,28 +1019,45 @@ const AddTradeSheet = memo(function AddTradeSheet({
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {modalTab === "details" ? (
-              <button type="button" onClick={() => setModalTab("analysis")} style={{ padding: "0 16px", height: 40, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(148,163,184,0.8)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                Next: Analysis
+              <button
+                type="button"
+                onClick={() => setModalTab("analysis")}
+                style={{
+                  padding: "0 20px", height: 40, borderRadius: 12,
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.97) 0%, rgba(220,228,255,0.92) 50%, rgba(255,255,255,0.88) 100%)",
+                  border: "1.5px solid rgba(255,255,255,0.85)",
+                  color: "#0a0a0f", fontSize: 13.5, fontWeight: 700,
+                  boxShadow: "0 2px 12px rgba(255,255,255,0.18), inset 0 1px 0 rgba(255,255,255,1)",
+                  cursor: "pointer",
+                }}
+              >
+                Next →
               </button>
             ) : (
-              <button type="button" onClick={() => setModalTab("details")} style={{ padding: "0 16px", height: 40, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(148,163,184,0.8)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                Back
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setModalTab("details")}
+                  style={{ padding: "0 16px", height: 40, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(148,163,184,0.8)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                >
+                  ← Back
+                </button>
+                <button
+                  type="submit" form="tradeForm" disabled={isPending}
+                  style={{
+                    padding: "0 20px", height: 40, borderRadius: 12,
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.97) 0%, rgba(220,228,255,0.92) 50%, rgba(255,255,255,0.88) 100%)",
+                    border: "1.5px solid rgba(255,255,255,0.85)",
+                    color: "#0a0a0f", fontSize: 13.5, fontWeight: 700,
+                    boxShadow: "0 2px 12px rgba(255,255,255,0.18), inset 0 1px 0 rgba(255,255,255,1)",
+                    cursor: isPending ? "not-allowed" : "pointer",
+                    opacity: isPending ? 0.5 : 1,
+                  }}
+                >
+                  {isPending ? "Saving..." : "Save Trade"}
+                </button>
+              </>
             )}
-            <button
-              type="submit" form="tradeForm" disabled={isPending}
-              style={{
-                padding: "0 20px", height: 40, borderRadius: 12,
-                background: "linear-gradient(135deg, rgba(255,255,255,0.97) 0%, rgba(220,228,255,0.92) 50%, rgba(255,255,255,0.88) 100%)",
-                border: "1.5px solid rgba(255,255,255,0.85)",
-                color: "#0a0a0f", fontSize: 13.5, fontWeight: 700,
-                boxShadow: "0 2px 12px rgba(255,255,255,0.18), inset 0 1px 0 rgba(255,255,255,1)",
-                cursor: isPending ? "not-allowed" : "pointer",
-                opacity: isPending ? 0.5 : 1,
-              }}
-            >
-              {isPending ? "Saving..." : "Save Trade"}
-            </button>
           </div>
         </div>
       </div>
