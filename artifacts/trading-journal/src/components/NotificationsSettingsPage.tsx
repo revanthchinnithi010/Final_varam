@@ -18,6 +18,7 @@ import {
   ArrowLeft, Volume2, VolumeX, Music, Timer, ChevronRight, Check,
   Upload, Trash2, Play, FileAudio, AlertCircle,
   Send, Eye, EyeOff, Loader2, WifiOff, Bot, Lock,
+  ChevronDown, ClipboardPaste, CheckCircle2, XCircle, Info, Zap,
 } from "lucide-react";
 
 import { COMPOSITOR_EASE as EASE_OPEN, COMPOSITOR_EASE_CLOSE as EASE_CLOSE } from "@/animations/motion";
@@ -536,6 +537,66 @@ function CustomUploadSection({ disabled, onFileUploaded }: CustomUploadSectionPr
 
 /* ── Telegram section ────────────────────────────────────────────────────── */
 
+const TG          = "#29b6f6";
+const TG_BG       = "rgba(41,182,246,0.10)";
+const TG_BORDER   = "rgba(41,182,246,0.22)";
+const CARD_R      = 18;
+const CARD_BG     = "rgba(255,255,255,0.04)";
+const CARD_BORDER = "rgba(255,255,255,0.09)";
+
+function TelegramLogo({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="12" fill="#29b6f6" />
+      <path
+        d="M5.491 11.74 18.3 6.6c.613-.228 1.15.149.951.955L17.9 15.27c-.147.659-.538.818-1.09.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.234-4.732c.226-.2-.05-.312-.35-.112l-7.4 4.662-3.184-.994c-.692-.217-.707-.692.15-1.025z"
+        fill="white"
+      />
+    </svg>
+  );
+}
+
+function Spinner({ color, size = 15 }: { color: string; size?: number }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%",
+      border: `2px solid ${color}33`,
+      borderTopColor: color,
+      animation: "tg-spin 0.7s linear infinite",
+      flexShrink: 0,
+    }} />
+  );
+}
+
+function PasteBtn({ onPaste }: { onPaste: () => void }) {
+  const [pasted, setPasted] = useState(false);
+  const handleClick = () => {
+    onPaste();
+    setPasted(true);
+    setTimeout(() => setPasted(false), 1800);
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      title="Paste from clipboard"
+      style={{
+        width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: pasted ? "rgba(74,222,128,0.14)" : "rgba(255,255,255,0.06)",
+        border: `1px solid ${pasted ? "rgba(74,222,128,0.30)" : "rgba(255,255,255,0.10)"}`,
+        cursor: "pointer",
+        transition: "background 200ms, border-color 200ms",
+      }}
+    >
+      {pasted
+        ? <Check style={{ width: 13, height: 13, color: "#4ade80" }} />
+        : <ClipboardPaste style={{ width: 13, height: 13, color: "rgba(148,163,184,0.60)" }} />
+      }
+    </button>
+  );
+}
+
 type TgStatus = {
   configured:    boolean;
   chatId:        string | null;
@@ -543,16 +604,20 @@ type TgStatus = {
   globalEnabled: boolean;
 };
 
+type TestResult = { kind: "success" | "error"; msg: string } | null;
+
 function TelegramSection() {
   const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
 
-  const [tgStatus,   setTgStatus]   = useState<TgStatus | null>(null);
-  const [botToken,   setBotToken]   = useState("");
-  const [chatId,     setChatId]     = useState("");
-  const [showToken,  setShowToken]  = useState(false);
-  const [loading,    setLoading]    = useState<"save" | "test" | "disconnect" | "toggle" | null>(null);
-  const [error,      setError]      = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [tgStatus,    setTgStatus]    = useState<TgStatus | null>(null);
+  const [botToken,    setBotToken]    = useState("");
+  const [chatId,      setChatId]      = useState("");
+  const [showToken,   setShowToken]   = useState(false);
+  const [loading,     setLoading]     = useState<"save" | "test" | "disconnect" | "toggle" | null>(null);
+  const [error,       setError]       = useState<string | null>(null);
+  const [testResult,  setTestResult]  = useState<TestResult>(null);
+  const [infoOpen,    setInfoOpen]    = useState(false);
+  const [connectedAt, setConnectedAt] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -563,7 +628,7 @@ function TelegramSection() {
 
   useEffect(() => { fetchStatus(); }, [fetchStatus]);
 
-  const clearMessages = () => { setError(null); setSuccessMsg(null); };
+  const clearFeedback = () => { setError(null); setTestResult(null); };
 
   const handleSave = async () => {
     const trimToken  = botToken.trim();
@@ -572,7 +637,7 @@ function TelegramSection() {
     if (!trimChatId) { setError("Chat ID is required"); return; }
     if (trimToken.length < 20) { setError("Bot token looks too short — copy it directly from @BotFather"); return; }
 
-    clearMessages();
+    clearFeedback();
     setLoading("save");
     try {
       const d = await fetch(`${BASE}/api/telegram/config`, {
@@ -582,8 +647,9 @@ function TelegramSection() {
       }).then(r => r.json()) as { success: boolean; error?: string };
 
       if (d.success) {
-        setSuccessMsg("Telegram connected! A confirmation message was sent to your chat.");
         setBotToken(""); setChatId("");
+        setConnectedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+        setTestResult({ kind: "success", msg: "Telegram Connected" });
         await fetchStatus();
       } else {
         setError(d.error ?? "Connection failed — please try again");
@@ -596,28 +662,39 @@ function TelegramSection() {
   };
 
   const handleTest = async () => {
-    clearMessages();
+    clearFeedback();
     setLoading("test");
     try {
       const d = await fetch(`${BASE}/api/telegram/test`, { method: "POST" }).then(r => r.json()) as {
         success: boolean; error?: string;
       };
-      if (d.success) setSuccessMsg("Test message sent to your Telegram!");
-      else setError(d.error ?? "Test failed — check bot token and chat ID");
+      if (d.success) {
+        setTestResult({ kind: "success", msg: "Telegram Connected" });
+      } else {
+        const msg = d.error ?? "Test failed";
+        const lower = msg.toLowerCase();
+        if (lower.includes("token") || lower.includes("bot")) {
+          setTestResult({ kind: "error", msg: "Invalid Bot Token" });
+        } else if (lower.includes("chat") || lower.includes("id")) {
+          setTestResult({ kind: "error", msg: "Invalid Chat ID" });
+        } else {
+          setTestResult({ kind: "error", msg: msg });
+        }
+      }
     } catch {
-      setError("Network error");
+      setTestResult({ kind: "error", msg: "Network error" });
     } finally {
       setLoading(null);
     }
   };
 
   const handleDisconnect = async () => {
-    clearMessages();
+    clearFeedback();
     setLoading("disconnect");
     try {
       await fetch(`${BASE}/api/telegram/config`, { method: "DELETE" });
+      setConnectedAt(null);
       await fetchStatus();
-      setSuccessMsg("Telegram disconnected.");
     } catch {
       setError("Failed to disconnect — please try again");
     } finally {
@@ -642,263 +719,474 @@ function TelegramSection() {
     }
   };
 
-  const isConnected = tgStatus?.configured ?? false;
+  const pasteToken = async () => {
+    try { setBotToken(await navigator.clipboard.readText()); clearFeedback(); } catch { /* permissions denied */ }
+  };
+  const pasteChatId = async () => {
+    try { setChatId(await navigator.clipboard.readText()); clearFeedback(); } catch { /* permissions denied */ }
+  };
+
+  const isConnected   = tgStatus?.configured ?? false;
   const globalEnabled = tgStatus?.globalEnabled ?? true;
-  const isLoading = loading !== null;
+  const isLoading     = loading !== null;
+  const canConnect    = botToken.trim().length > 0 && chatId.trim().length > 0;
 
   return (
     <>
-      {/* Section header */}
+      {/* ── Section divider + label ────────────────────────────────────────── */}
       <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "8px 0 0" }} />
-      <p style={{
-        fontSize: 11, fontWeight: 700, letterSpacing: "0.10em",
-        textTransform: "uppercase", padding: "24px 24px 10px",
-        color: "rgba(148,163,184,0.40)", lineHeight: 1,
-      }}>Telegram Alerts</p>
-
-      {/* Global enable toggle */}
-      <ToggleRow
-        icon={Bot}
-        iconColor={globalEnabled ? "#38bdf8" : "#94a3b8"}
-        iconBg={globalEnabled ? "rgba(56,189,248,0.14)" : "rgba(148,163,184,0.10)"}
-        label="Enable Telegram Alerts"
-        sub={isConnected
-          ? globalEnabled ? "Alerts will be sent to your Telegram" : "Paused — alerts won't be forwarded"
-          : "Connect your bot below to use this"}
-        value={globalEnabled}
-        onChange={v => { void handleToggle(v); }}
-        showDivider={false}
-      />
-
-      {/* Connection card */}
       <div style={{
-        margin: "8px 16px 4px",
-        borderRadius: 16,
-        border: `1px solid ${isConnected ? "rgba(56,189,248,0.22)" : "rgba(255,255,255,0.08)"}`,
-        background: isConnected ? "rgba(56,189,248,0.05)" : "rgba(255,255,255,0.03)",
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "22px 20px 10px",
+      }}>
+        <TelegramLogo size={18} />
+        <p style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          color: "rgba(148,163,184,0.40)", lineHeight: 1, margin: 0,
+        }}>Telegram Alerts</p>
+      </div>
+
+      {/* ── 1. Enable toggle ──────────────────────────────────────────────── */}
+      <div style={{
+        margin: "0 16px 0",
+        borderRadius: CARD_R,
+        background: CARD_BG,
+        border: `1px solid ${CARD_BORDER}`,
         overflow: "hidden",
       }}>
-        {/* Card header */}
-        <div style={{
-          padding: "14px 16px 12px",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Send style={{ width: 14, height: 14, color: isConnected ? "#38bdf8" : "rgba(148,163,184,0.50)", flexShrink: 0 }} />
-            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "rgba(148,163,184,0.55)" }}>
-              Bot Connection
-            </span>
+        <button
+          onClick={() => { if (!isLoading) void handleToggle(!globalEnabled); }}
+          style={{
+            display: "flex", alignItems: "center",
+            padding: "0 16px", height: 64, width: "100%",
+            background: "transparent", border: "none", cursor: "pointer", gap: 14,
+          }}
+        >
+          <div style={{
+            width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: globalEnabled ? TG_BG : "rgba(148,163,184,0.10)",
+            border: `1px solid ${globalEnabled ? TG_BORDER : "rgba(148,163,184,0.12)"}`,
+            transition: "background 250ms, border-color 250ms",
+          }}>
+            <TelegramLogo size={20} />
           </div>
-          {/* Status pill */}
-          <span style={{
-            display: "inline-flex", alignItems: "center", gap: 5,
-            padding: "3px 10px", borderRadius: 20,
-            fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-            background: isConnected ? "rgba(56,189,248,0.12)" : "rgba(148,163,184,0.08)",
-            border: `1px solid ${isConnected ? "rgba(56,189,248,0.30)" : "rgba(148,163,184,0.18)"}`,
-            color: isConnected ? "#38bdf8" : "rgba(148,163,184,0.70)",
+          <div style={{ flex: 1, textAlign: "left" }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.90)", lineHeight: 1.3, margin: 0 }}>
+              Enable Telegram Alerts
+            </p>
+            <p style={{ fontSize: 12, color: "rgba(148,163,184,0.50)", marginTop: 2, margin: "2px 0 0" }}>
+              {isConnected
+                ? globalEnabled ? "Alerts forwarded to your Telegram" : "Paused — alerts won't be forwarded"
+                : "Connect your bot below to enable"}
+            </p>
+          </div>
+          {loading === "toggle"
+            ? <Spinner color={TG} size={18} />
+            : (
+              <div style={{
+                width: 46, height: 26, borderRadius: 13, flexShrink: 0,
+                background: globalEnabled ? TG : "rgba(255,255,255,0.12)",
+                position: "relative",
+                transition: "background 220ms",
+              }}>
+                <div style={{
+                  position: "absolute",
+                  top: 3, left: globalEnabled ? 23 : 3,
+                  width: 20, height: 20, borderRadius: "50%",
+                  background: globalEnabled ? "#fff" : "rgba(255,255,255,0.70)",
+                  transition: `left 220ms ${COMPOSITOR_EASE}`,
+                  boxShadow: globalEnabled ? `0 1px 4px rgba(0,0,0,0.30)` : "none",
+                }} />
+              </div>
+            )
+          }
+        </button>
+      </div>
+
+      {/* ── 2. Connection Status Card ─────────────────────────────────────── */}
+      <div style={{
+        margin: "10px 16px 0",
+        borderRadius: CARD_R,
+        background: isConnected ? "rgba(41,182,246,0.06)" : CARD_BG,
+        border: `1px solid ${isConnected ? TG_BORDER : CARD_BORDER}`,
+        overflow: "hidden",
+        transition: "background 300ms, border-color 300ms",
+      }}>
+        <div style={{
+          padding: "16px",
+          display: "flex", alignItems: "center", gap: 14,
+        }}>
+          {/* Large status chip */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "8px 16px", borderRadius: 50,
+            background: isConnected ? "rgba(74,222,128,0.12)" : "rgba(148,163,184,0.08)",
+            border: `1px solid ${isConnected ? "rgba(74,222,128,0.28)" : "rgba(148,163,184,0.16)"}`,
+            flexShrink: 0,
           }}>
             <span style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: isConnected ? "#38bdf8" : "rgba(148,163,184,0.50)",
+              width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+              background: isConnected ? "#4ade80" : "rgba(148,163,184,0.45)",
+              boxShadow: isConnected ? "0 0 6px rgba(74,222,128,0.60)" : "none",
+              display: "block",
             }} />
-            {isConnected ? "Connected" : "Not connected"}
-          </span>
-        </div>
+            <span style={{
+              fontSize: 13, fontWeight: 700,
+              color: isConnected ? "#4ade80" : "rgba(148,163,184,0.65)",
+              letterSpacing: "0.01em",
+            }}>
+              {isConnected ? "Connected" : "Not Connected"}
+            </span>
+          </div>
 
-        <div style={{ padding: "16px" }}>
+          {/* Bot info — right side */}
           {isConnected ? (
-            /* ── Connected state ──────────────────────── */
-            <>
-              {/* Masked credentials */}
-              <div style={{
-                display: "flex", flexDirection: "column", gap: 8,
-                padding: "12px 14px",
-                background: "rgba(255,255,255,0.03)",
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.07)",
-                marginBottom: 14,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Lock style={{ width: 12, height: 12, color: "#38bdf8", flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: "rgba(148,163,184,0.55)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Bot Token</span>
-                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.75)", marginLeft: "auto" }}>
-                    {tgStatus?.tokenMasked ?? "••••••"}
-                  </span>
-                </div>
-                <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Bot style={{ width: 12, height: 12, color: "#38bdf8", flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: "rgba(148,163,184,0.55)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Chat ID</span>
-                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.75)", marginLeft: "auto" }}>
-                    {tgStatus?.chatId ?? "—"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={handleTest}
-                  disabled={isLoading}
-                  style={{
-                    flex: 1, height: 40, borderRadius: 12,
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                    background: "rgba(56,189,248,0.14)",
-                    border: "1px solid rgba(56,189,248,0.30)",
-                    color: "#38bdf8", fontSize: 13, fontWeight: 600,
-                    cursor: isLoading ? "not-allowed" : "pointer",
-                    opacity: isLoading && loading !== "test" ? 0.5 : 1,
-                    transition: "opacity 150ms",
-                  }}
-                >
-                  {loading === "test"
-                    ? <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(56,189,248,0.30)", borderTopColor: "#38bdf8", animation: "spin 0.7s linear infinite" }} />
-                    : <Send style={{ width: 14, height: 14 }} />
-                  }
-                  Test Alert
-                </button>
-                <button
-                  onClick={handleDisconnect}
-                  disabled={isLoading}
-                  style={{
-                    flex: 1, height: 40, borderRadius: 12,
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                    background: "rgba(239,68,68,0.08)",
-                    border: "1px solid rgba(239,68,68,0.22)",
-                    color: "#f87171", fontSize: 13, fontWeight: 600,
-                    cursor: isLoading ? "not-allowed" : "pointer",
-                    opacity: isLoading && loading !== "disconnect" ? 0.5 : 1,
-                    transition: "opacity 150ms",
-                  }}
-                >
-                  {loading === "disconnect"
-                    ? <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(239,68,68,0.30)", borderTopColor: "#f87171", animation: "spin 0.7s linear infinite" }} />
-                    : <WifiOff style={{ width: 14, height: 14 }} />
-                  }
-                  Disconnect
-                </button>
-              </div>
-            </>
+            <div style={{ flex: 1, textAlign: "right" }}>
+              {tgStatus?.chatId && (
+                <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.70)", margin: 0, fontFamily: "monospace" }}>
+                  {tgStatus.chatId}
+                </p>
+              )}
+              {connectedAt && (
+                <p style={{ fontSize: 11, color: "rgba(148,163,184,0.45)", margin: "2px 0 0" }}>
+                  Last connected {connectedAt}
+                </p>
+              )}
+              {tgStatus?.tokenMasked && (
+                <p style={{ fontSize: 11, color: "rgba(148,163,184,0.40)", margin: "2px 0 0", fontFamily: "monospace" }}>
+                  {tgStatus.tokenMasked}
+                </p>
+              )}
+            </div>
           ) : (
-            /* ── Setup form ──────────────────────────── */
-            <>
-              {/* Bot Token */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(148,163,184,0.55)", marginBottom: 6 }}>
-                  Bot Token
-                </label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showToken ? "text" : "password"}
-                    placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
-                    value={botToken}
-                    autoComplete="off"
-                    onChange={e => { setBotToken(e.target.value); clearMessages(); }}
-                    onKeyDown={e => e.key === "Enter" && void handleSave()}
-                    style={{
-                      width: "100%", height: 42, borderRadius: 10,
-                      padding: "0 40px 0 14px",
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      color: "rgba(255,255,255,0.90)", fontSize: 13,
-                      fontFamily: "monospace",
-                      outline: "none", boxSizing: "border-box",
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowToken(v => !v)}
-                    style={{
-                      position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                      background: "none", border: "none", padding: 0, cursor: "pointer",
-                      color: "rgba(148,163,184,0.55)", display: "flex", alignItems: "center",
-                    }}
-                  >
-                    {showToken ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Chat ID */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(148,163,184,0.55)", marginBottom: 6 }}>
-                  Chat ID
-                </label>
-                <input
-                  type="text"
-                  placeholder="-100123456789"
-                  value={chatId}
-                  autoComplete="off"
-                  onChange={e => { setChatId(e.target.value); clearMessages(); }}
-                  onKeyDown={e => e.key === "Enter" && void handleSave()}
-                  style={{
-                    width: "100%", height: 42, borderRadius: 10,
-                    padding: "0 14px",
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    color: "rgba(255,255,255,0.90)", fontSize: 13,
-                    fontFamily: "monospace",
-                    outline: "none", boxSizing: "border-box",
-                  }}
-                />
-              </div>
-
-              {/* Help text */}
-              <p style={{ fontSize: 11, color: "rgba(148,163,184,0.45)", lineHeight: 1.6, marginBottom: 14 }}>
-                Create a bot via <span style={{ color: "#38bdf8" }}>@BotFather</span> on Telegram, then send <span style={{ color: "rgba(255,255,255,0.60)", fontFamily: "monospace" }}>/start</span> to your bot and get your Chat ID from <span style={{ color: "#38bdf8" }}>@userinfobot</span>.
-              </p>
-
-              {/* Save button */}
-              <button
-                onClick={handleSave}
-                disabled={isLoading || !botToken.trim() || !chatId.trim()}
-                style={{
-                  width: "100%", height: 42, borderRadius: 12,
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  background: (!botToken.trim() || !chatId.trim() || isLoading) ? "rgba(56,189,248,0.08)" : "rgba(56,189,248,0.20)",
-                  border: `1px solid ${(!botToken.trim() || !chatId.trim() || isLoading) ? "rgba(56,189,248,0.15)" : "rgba(56,189,248,0.40)"}`,
-                  color: (!botToken.trim() || !chatId.trim() || isLoading) ? "rgba(56,189,248,0.45)" : "#38bdf8",
-                  fontSize: 14, fontWeight: 700,
-                  cursor: (!botToken.trim() || !chatId.trim() || isLoading) ? "not-allowed" : "pointer",
-                  transition: "all 200ms",
-                }}
-              >
-                {loading === "save"
-                  ? <div style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(56,189,248,0.30)", borderTopColor: "#38bdf8", animation: "spin 0.7s linear infinite" }} />
-                  : <Send style={{ width: 15, height: 15 }} />
-                }
-                {loading === "save" ? "Connecting…" : "Save & Connect"}
-              </button>
-            </>
-          )}
-
-          {/* Error / success messages */}
-          {error && (
-            <div style={{
-              marginTop: 10, display: "flex", alignItems: "flex-start", gap: 8,
-              padding: "10px 12px", borderRadius: 10,
-              background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)",
-            }}>
-              <AlertCircle style={{ width: 13, height: 13, color: "#f87171", flexShrink: 0, marginTop: 1 }} />
-              <span style={{ fontSize: 12, color: "#f87171", lineHeight: 1.5 }}>{error}</span>
-            </div>
-          )}
-          {successMsg && (
-            <div style={{
-              marginTop: 10, display: "flex", alignItems: "flex-start", gap: 8,
-              padding: "10px 12px", borderRadius: 10,
-              background: "rgba(56,189,248,0.06)", border: "1px solid rgba(56,189,248,0.20)",
-            }}>
-              <Check style={{ width: 13, height: 13, color: "#38bdf8", flexShrink: 0, marginTop: 1 }} />
-              <span style={{ fontSize: 12, color: "#38bdf8", lineHeight: 1.5 }}>{successMsg}</span>
-            </div>
+            <p style={{ flex: 1, fontSize: 12, color: "rgba(148,163,184,0.40)", margin: 0, textAlign: "right" }}>
+              Configure below
+            </p>
           )}
         </div>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* ── 3. Bot Configuration ─────────────────────────────────────────── */}
+      <div style={{
+        margin: "10px 16px 0",
+        borderRadius: CARD_R,
+        background: CARD_BG,
+        border: `1px solid ${CARD_BORDER}`,
+        overflow: "hidden",
+      }}>
+        {/* Label row */}
+        <div style={{
+          padding: "12px 16px 10px",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          display: "flex", alignItems: "center", gap: 7,
+        }}>
+          <Bot style={{ width: 13, height: 13, color: TG, flexShrink: 0 }} />
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(148,163,184,0.45)" }}>
+            Bot Configuration
+          </span>
+        </div>
+
+        <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Bot Token */}
+          <div>
+            <label style={{
+              display: "block", fontSize: 11, fontWeight: 700,
+              letterSpacing: "0.07em", textTransform: "uppercase",
+              color: "rgba(148,163,184,0.50)", marginBottom: 7,
+            }}>Bot Token</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ position: "relative", flex: 1 }}>
+                <input
+                  type={showToken ? "text" : "password"}
+                  placeholder="123456:ABC-DEF…"
+                  value={botToken}
+                  autoComplete="off"
+                  onChange={e => { setBotToken(e.target.value); clearFeedback(); }}
+                  onKeyDown={e => e.key === "Enter" && void handleSave()}
+                  style={{
+                    width: "100%", height: 44, borderRadius: 12,
+                    padding: "0 42px 0 14px",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    color: "rgba(255,255,255,0.90)", fontSize: 13,
+                    fontFamily: "monospace",
+                    outline: "none", boxSizing: "border-box",
+                    transition: "border-color 150ms",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowToken(v => !v)}
+                  style={{
+                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", padding: 0, cursor: "pointer",
+                    color: "rgba(148,163,184,0.50)", display: "flex", alignItems: "center",
+                  }}
+                >
+                  {showToken
+                    ? <EyeOff style={{ width: 15, height: 15 }} />
+                    : <Eye style={{ width: 15, height: 15 }} />
+                  }
+                </button>
+              </div>
+              <PasteBtn onPaste={pasteToken} />
+            </div>
+          </div>
+
+          {/* Chat ID */}
+          <div>
+            <label style={{
+              display: "block", fontSize: 11, fontWeight: 700,
+              letterSpacing: "0.07em", textTransform: "uppercase",
+              color: "rgba(148,163,184,0.50)", marginBottom: 7,
+            }}>Chat ID</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="text"
+                placeholder="-100123456789"
+                value={chatId}
+                autoComplete="off"
+                onChange={e => { setChatId(e.target.value); clearFeedback(); }}
+                onKeyDown={e => e.key === "Enter" && void handleSave()}
+                style={{
+                  flex: 1, height: 44, borderRadius: 12,
+                  padding: "0 14px",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  color: "rgba(255,255,255,0.90)", fontSize: 13,
+                  fontFamily: "monospace",
+                  outline: "none", boxSizing: "border-box",
+                  transition: "border-color 150ms",
+                }}
+              />
+              <PasteBtn onPaste={pasteChatId} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 4. Action Buttons ─────────────────────────────────────────────── */}
+      <div style={{ margin: "12px 16px 0", display: "flex", flexDirection: "column", gap: 9 }}>
+
+        {/* Primary: Connect Bot — always visible */}
+        <button
+          onClick={handleSave}
+          disabled={isLoading || !canConnect}
+          style={{
+            width: "100%", height: 52, borderRadius: 14,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 9,
+            background: canConnect && !isLoading
+              ? `linear-gradient(135deg, ${TG} 0%, #0ea5e9 100%)`
+              : "rgba(41,182,246,0.08)",
+            border: `1px solid ${canConnect && !isLoading ? "rgba(41,182,246,0.50)" : "rgba(41,182,246,0.14)"}`,
+            color: canConnect && !isLoading ? "#fff" : "rgba(41,182,246,0.35)",
+            fontSize: 15, fontWeight: 700,
+            cursor: !canConnect || isLoading ? "not-allowed" : "pointer",
+            transition: "all 250ms",
+            boxShadow: canConnect && !isLoading ? "0 4px 20px rgba(41,182,246,0.22)" : "none",
+          }}
+        >
+          {loading === "save"
+            ? <Spinner color="#fff" size={17} />
+            : <Send style={{ width: 16, height: 16 }} />
+          }
+          {loading === "save" ? "Connecting…" : "Connect Bot"}
+        </button>
+
+        {/* Secondary + Danger row — only when connected */}
+        {isConnected && (
+          <div style={{ display: "flex", gap: 9 }}>
+            {/* Test Message */}
+            <button
+              onClick={handleTest}
+              disabled={isLoading}
+              style={{
+                flex: 1, height: 48, borderRadius: 14,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                color: "rgba(255,255,255,0.80)", fontSize: 14, fontWeight: 600,
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading && loading !== "test" ? 0.45 : 1,
+                transition: "opacity 150ms, background 150ms",
+              }}
+            >
+              {loading === "test"
+                ? <Spinner color="rgba(255,255,255,0.70)" size={15} />
+                : <Zap style={{ width: 15, height: 15 }} />
+              }
+              Test Message
+            </button>
+
+            {/* Disconnect */}
+            <button
+              onClick={handleDisconnect}
+              disabled={isLoading}
+              style={{
+                flex: 1, height: 48, borderRadius: 14,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                background: "rgba(239,68,68,0.07)",
+                border: "1px solid rgba(239,68,68,0.18)",
+                color: "#f87171", fontSize: 14, fontWeight: 600,
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading && loading !== "disconnect" ? 0.45 : 1,
+                transition: "opacity 150ms, background 150ms",
+              }}
+            >
+              {loading === "disconnect"
+                ? <Spinner color="#f87171" size={15} />
+                : <WifiOff style={{ width: 15, height: 15 }} />
+              }
+              Disconnect
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── 5. Collapsible Info Card ──────────────────────────────────────── */}
+      <div style={{
+        margin: "12px 16px 0",
+        borderRadius: CARD_R,
+        background: CARD_BG,
+        border: `1px solid ${CARD_BORDER}`,
+        overflow: "hidden",
+      }}>
+        <button
+          onClick={() => setInfoOpen(v => !v)}
+          style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "14px 16px", width: "100%",
+            background: "transparent", border: "none", cursor: "pointer",
+          }}
+        >
+          <div style={{
+            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(165,180,252,0.12)",
+            border: "1px solid rgba(165,180,252,0.20)",
+          }}>
+            <Info style={{ width: 13, height: 13, color: "#a5b4fc" }} />
+          </div>
+          <span style={{ flex: 1, textAlign: "left", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.72)" }}>
+            How to get Bot Token &amp; Chat ID
+          </span>
+          <ChevronDown style={{
+            width: 15, height: 15, color: "rgba(148,163,184,0.45)", flexShrink: 0,
+            transform: infoOpen ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 220ms ease",
+          }} />
+        </button>
+
+        {/* Expanded content */}
+        <div style={{
+          maxHeight: infoOpen ? 320 : 0,
+          overflow: "hidden",
+          transition: "max-height 280ms ease",
+        }}>
+          <div style={{
+            padding: "14px 16px 16px",
+            borderTop: "1px solid rgba(255,255,255,0.05)",
+          }}>
+            {([
+              <>Open Telegram and search for <span style={{ color: TG, fontWeight: 600 }}>@BotFather</span>.</>,
+              <>Send <span style={{ fontFamily: "monospace", color: "rgba(255,255,255,0.70)" }}>/newbot</span> and follow the prompts to create your bot.</>,
+              <>Copy the <span style={{ color: "rgba(255,255,255,0.78)", fontWeight: 600 }}>Bot Token</span> that BotFather sends you.</>,
+              <>Send <span style={{ fontFamily: "monospace", color: "rgba(255,255,255,0.70)" }}>/start</span> to your bot, then message <span style={{ color: TG, fontWeight: 600 }}>@userinfobot</span> to get your Chat ID.</>,
+            ] as React.ReactNode[]).map((content, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, marginBottom: i < 3 ? 10 : 0 }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(41,182,246,0.14)",
+                  fontSize: 10, fontWeight: 800, color: TG,
+                  marginTop: 1,
+                }}>
+                  {i + 1}
+                </div>
+                <p style={{ fontSize: 12, color: "rgba(148,163,184,0.65)", lineHeight: 1.55, margin: 0, flex: 1 }}>
+                  {content}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 6. Test / Connect Result ──────────────────────────────────────── */}
+      {testResult && (
+        <div style={{
+          margin: "10px 16px 0",
+          borderRadius: 14,
+          padding: "12px 16px",
+          display: "flex", alignItems: "center", gap: 10,
+          background: testResult.kind === "success"
+            ? "rgba(74,222,128,0.08)"
+            : "rgba(239,68,68,0.08)",
+          border: `1px solid ${testResult.kind === "success" ? "rgba(74,222,128,0.22)" : "rgba(239,68,68,0.20)"}`,
+          animation: "tg-fadein 220ms ease forwards",
+        }}>
+          {testResult.kind === "success"
+            ? <CheckCircle2 style={{ width: 17, height: 17, color: "#4ade80", flexShrink: 0 }} />
+            : <XCircle style={{ width: 17, height: 17, color: "#f87171", flexShrink: 0 }} />
+          }
+          <span style={{
+            fontSize: 13, fontWeight: 700,
+            color: testResult.kind === "success" ? "#4ade80" : "#f87171",
+          }}>
+            {testResult.msg}
+          </span>
+          <button
+            onClick={() => setTestResult(null)}
+            style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", padding: 2, color: "rgba(148,163,184,0.40)", display: "flex" }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* General error banner */}
+      {error && (
+        <div style={{
+          margin: "10px 16px 0",
+          borderRadius: 14,
+          padding: "12px 16px",
+          display: "flex", alignItems: "flex-start", gap: 10,
+          background: "rgba(239,68,68,0.08)",
+          border: "1px solid rgba(239,68,68,0.20)",
+          animation: "tg-fadein 220ms ease forwards",
+        }}>
+          <AlertCircle style={{ width: 15, height: 15, color: "#f87171", flexShrink: 0, marginTop: 1 }} />
+          <span style={{ fontSize: 12, color: "#f87171", lineHeight: 1.5, flex: 1 }}>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "rgba(248,113,113,0.50)", display: "flex", flexShrink: 0 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ── 7. Footer ─────────────────────────────────────────────────────── */}
+      <div style={{
+        margin: "14px 16px 0",
+        padding: "12px 14px",
+        borderRadius: 12,
+        background: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.05)",
+        display: "flex", alignItems: "flex-start", gap: 8,
+      }}>
+        <Send style={{ width: 12, height: 12, color: "rgba(148,163,184,0.35)", flexShrink: 0, marginTop: 2 }} />
+        <p style={{ fontSize: 11, color: "rgba(148,163,184,0.40)", lineHeight: 1.6, margin: 0 }}>
+          Telegram alerts are sent directly from the backend even if the app is closed.
+        </p>
+      </div>
+
+      <style>{`
+        @keyframes tg-spin { to { transform: rotate(360deg); } }
+        @keyframes tg-fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
     </>
   );
 }
