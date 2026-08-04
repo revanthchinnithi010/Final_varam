@@ -1439,7 +1439,7 @@ export default function Trades() {
               </div>
 
               {/* ── Summary header: symbol + side ── */}
-              <div className="mx-4 mt-4 mb-1 flex items-center justify-between">
+              <div className="mx-4 mt-2 mb-2 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-0.5">Symbol</p>
                   <h2 className="text-2xl font-black tracking-tight text-white leading-none">{selectedTrade.symbol}</h2>
