@@ -1,3 +1,4 @@
+- [Alert mock routes block real DB alerts](alert-mock-routes.md) — GET /api/alerts|zones|trendlines must NOT be mocked; mock intercept prevents AlertEngine from seeing real zones
 - [Multi-account portfolio architecture](multi-account-portfolio.md) — useDeltaAccount/useCtraderAccount/useCombinedPortfolio; Delta=fixed ₹85, cTrader=live rate; Dashboard uses display not usd props
 - [Layout content wrapper stability](layout-content-wrapper-stability.md) — single stable wrapper in Layout; branching on location mid-transition breaks popLayout exit animations; StandardPageWrapper in App.tsx for standard pages
 - [cTrader dynamic leverage](ctrader-dynamic-leverage.md) — PT2177/2178; leverage stored ×100 (divide by 100); volumeUsdCents≥1e12 = sentinel flat tier; leverageId from ProtoOASymbol field 35

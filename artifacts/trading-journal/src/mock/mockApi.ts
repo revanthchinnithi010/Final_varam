@@ -8,7 +8,6 @@ import { MOCK_CALENDAR_DAYS } from "./data/calendar";
 import { MOCK_SYMBOL_STATS } from "./data/watchlist";
 import { MOCK_TRADES, toApiTrade } from "./data/trades";
 import { MOCK_NOTES } from "./data/notebook";
-import { MOCK_API_PRICE_ALERTS, MOCK_API_ZONE_ALERTS, MOCK_API_TRENDLINE_ALERTS } from "./data/alerts";
 import {
   MOCK_BROKER_ACCOUNTS,
   MOCK_DELTA_BALANCE, MOCK_CTRADER_BALANCE,
@@ -61,9 +60,11 @@ const routes: Route[] = [
 
   { test: (m, p) => m === "GET" && p === "/api/notes", body: () => MOCK_NOTES },
 
-  { test: (m, p) => m === "GET" && p === "/api/alerts",     body: () => MOCK_API_PRICE_ALERTS },
-  { test: (m, p) => m === "GET" && p === "/api/zones",      body: () => MOCK_API_ZONE_ALERTS },
-  { test: (m, p) => m === "GET" && p === "/api/trendlines", body: () => MOCK_API_TRENDLINE_ALERTS },
+  // NOTE: /api/alerts, /api/zones, /api/trendlines are intentionally NOT
+  // mocked here.  Alert state is mutated via real POST/PATCH/DELETE calls, so
+  // GET must also hit the real API — otherwise GET would keep returning fixed
+  // mock rows that the AlertEngine never sees (it reads from the DB, not from
+  // React state), and zone/price/trendline alerts would never fire.
 
   { test: (m, p) => m === "GET" && p === "/api/broker-accounts", body: () => ({ ok: true, accounts: MOCK_BROKER_ACCOUNTS }) },
 
