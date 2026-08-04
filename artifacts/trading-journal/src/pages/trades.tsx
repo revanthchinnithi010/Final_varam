@@ -1439,12 +1439,7 @@ export default function Trades() {
               </div>
 
               {/* ── Summary header: symbol + side ── */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="mx-4 mt-4 mb-1 flex items-center justify-between"
-              >
+              <div className="mx-4 mt-4 mb-1 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-0.5">Symbol</p>
                   <h2 className="text-2xl font-black tracking-tight text-white leading-none">{selectedTrade.symbol}</h2>
@@ -1456,7 +1451,7 @@ export default function Trades() {
                 }`}>
                   {selectedTrade.side === "long" ? "LONG" : "SHORT"}
                 </span>
-              </motion.div>
+              </div>
 
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6" style={{ background: "#000000" }}>
                 {/* Date + PnL — open strip, no card box */}
