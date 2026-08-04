@@ -193,10 +193,12 @@ export class TelegramService {
     bypassGlobal?:   boolean,
   ): Promise<{ success: boolean; telegramResponse?: unknown; error?: string }> {
     if (!this.enabled || !this.botToken) {
+      logger.warn("TelegramService: sendMessage SKIPPED — not configured (no bot token/chat ID). Configure via Settings → Telegram Bot.");
       return { success: false, error: "Telegram not configured" };
     }
 
     if (!bypassGlobal && !this.globalEnabled) {
+      logger.warn("TelegramService: sendMessage SKIPPED — global toggle is OFF");
       return { success: false, error: "Telegram alerts are globally disabled" };
     }
 

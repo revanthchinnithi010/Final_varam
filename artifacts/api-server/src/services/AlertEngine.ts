@@ -605,7 +605,7 @@ export class AlertEngine {
       });
 
       if (zone.telegramEnabled) {
-        await this.telegram.sendZoneAlert({
+        const tgResult = await this.telegram.sendZoneAlert({
           symbol: zone.symbol,
           zoneType: zone.zoneType,
           condition: zone.condition,
@@ -615,6 +615,13 @@ export class AlertEngine {
           direction,
           notes: zone.notes,
         });
+        if (tgResult) {
+          logger.info({ zoneId: zone.id, symbol: zone.symbol }, "AlertEngine: fireZoneAlert — ✅ Telegram message sent");
+        } else {
+          logger.warn({ zoneId: zone.id, symbol: zone.symbol }, "AlertEngine: fireZoneAlert — ⚠️ Telegram send failed or skipped (see TelegramService logs above)");
+        }
+      } else {
+        logger.debug({ zoneId: zone.id }, "AlertEngine: fireZoneAlert — Telegram skipped (telegramEnabled=false on this zone)");
       }
 
       if (!keepAlive) {
