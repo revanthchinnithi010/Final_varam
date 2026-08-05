@@ -2163,8 +2163,56 @@ export const SelectAlertTypeOverlay = memo(function SelectAlertTypeOverlay({
   }, [onCloseAll]);
 
   const handlePriceAlertSave     = useCallback((a: PriceAlert)     => { addAlert(a); setActiveModal(null); onCloseRef.current(); }, [addAlert]);
-  const handleZoneAlertSave      = useCallback((a: ZoneAlert)      => { addAlert(a); setActiveModal(null); onCloseRef.current(); }, [addAlert]);
   const handleTrendlineAlertSave = useCallback((a: TrendlineAlert) => { addAlert(a); setActiveModal(null); onCloseRef.current(); }, [addAlert]);
+
+  // Zone alert save — persists to DB so the AlertEngine can watch it in real-time.
+  // Falls back to local-only if the network call fails (e.g. symbol not in whitelist).
+  const handleZoneAlertSave = useCallback(async (a: ZoneAlert) => {
+    try {
+      const res = await fetch("/api/zones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symbol:          a.symbol,
+          upperPrice:      a.upperPrice,
+          lowerPrice:      a.lowerPrice,
+          zoneType:        a.zoneType,
+          timeframe:       a.timeframe,
+          condition:       a.condition,
+          notes:           a.notes || undefined,
+          telegramEnabled: true,
+        }),
+      });
+      if (res.ok) {
+        const saved = await res.json() as Record<string, unknown>;
+        // Use the DB-assigned ID so delete/pause calls resolve correctly.
+        addAlert({
+          id:         `z_${saved["id"]}`,
+          type:       "zone",
+          symbol:     saved["symbol"]    as string,
+          zoneType:   (saved["zoneType"]  as ZoneAlert["zoneType"])  ?? "support_resistance",
+          upperPrice: saved["upperPrice"] as number,
+          lowerPrice: saved["lowerPrice"] as number,
+          timeframe:  (saved["timeframe"] as string)                 ?? "1H",
+          condition:  (saved["condition"] as ZoneAlert["condition"]) ?? "touch",
+          notes:      (saved["notes"]     as string)                 ?? "",
+          status:     "active",
+          createdAt:  saved["createdAt"] as string,
+          triggeredAt: null,
+        });
+      } else {
+        const body = await res.json().catch(() => ({ error: "Unknown error" })) as { error?: string };
+        toast.error("Zone alert not saved", {
+          description: body.error ?? `Server returned ${res.status}`,
+          duration: 5000,
+        });
+      }
+    } catch {
+      toast.error("Zone alert not saved", { description: "Network error — check API connection", duration: 5000 });
+    }
+    setActiveModal(null);
+    onCloseRef.current();
+  }, [addAlert]);
 
   if (!hasOpenedRef.current) return null;
 

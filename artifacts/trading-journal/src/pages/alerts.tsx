@@ -1184,12 +1184,24 @@ export default function Alerts() {
   const modalRef = useRef<AlertModalControllerHandle>(null);
   const [filterStatus, setFilterStatus]           = useState<AlertStatus | "all">("all");
 
-  const { alerts, addAlert, updateAlert, deleteAlert: storeDeleteAlert } = useAlertStore();
+  const { alerts, addAlert, updateAlert, deleteAlert: storeDeleteAlert, setAlerts } = useAlertStore();
   const priceAlerts     = alerts.filter((a): a is PriceAlert     => a.type === "price");
   const zoneAlerts      = alerts.filter((a): a is ZoneAlert      => a.type === "zone");
   const trendlineAlerts = alerts.filter((a): a is TrendlineAlert => a.type === "trendline");
 
   const { alertEvents: wsAlertEvents } = useLiveMarketContext();
+
+  // ── Hydrate from DB on first mount ────────────────────────────────────────────
+  // Replaces any stale localStorage data with the real DB state so that zone
+  // alerts created from the Dashboard flow (which persists to DB) appear here.
+  useEffect(() => {
+    loadAllAlerts()
+      .then(({ priceAlerts: pa, zoneAlerts: za, trendlineAlerts: ta }) => {
+        setAlerts([...pa, ...za, ...ta]);
+      })
+      .catch(() => { /* keep localStorage data if API is unreachable */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const allAlerts: AnyAlert[] = alerts;
   const totalActive    = allAlerts.filter(a => a.status === "active").length;
