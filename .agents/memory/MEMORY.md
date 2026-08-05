@@ -1,3 +1,4 @@
+- [Supabase connection pattern](supabase-connection.md) — DATABASE_URL = session-mode pooler URL; direct host is IPv6-only (Replit has no IPv6 out); SSL auto-detected from hostname; schema created by API migration runner not drizzle-kit push
 - [Alert mock routes block real DB alerts](alert-mock-routes.md) — GET /api/alerts|zones|trendlines must NOT be mocked; mock intercept prevents AlertEngine from seeing real zones
 - [Multi-account portfolio architecture](multi-account-portfolio.md) — useDeltaAccount/useCtraderAccount/useCombinedPortfolio; Delta=fixed ₹85, cTrader=live rate; Dashboard uses display not usd props
 - [Layout content wrapper stability](layout-content-wrapper-stability.md) — single stable wrapper in Layout; branching on location mid-transition breaks popLayout exit animations; StandardPageWrapper in App.tsx for standard pages
