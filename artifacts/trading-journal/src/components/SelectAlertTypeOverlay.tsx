@@ -739,7 +739,7 @@ const ZoneAlertScreen = memo(function ZoneAlertScreen({
   const [form, setForm] = useState({
     symbol: symbol ?? "NAS100", zoneType: "supply" as ZoneAlert["zoneType"],
     upperPrice: "", lowerPrice: "", timeframe: chartHumanTf,
-    condition: "touch" as ZoneAlert["condition"], notes: "",
+    condition: "enter" as ZoneAlert["condition"], notes: "",
     repeatMode: "three_reminders" as RepeatMode,
   });
 
