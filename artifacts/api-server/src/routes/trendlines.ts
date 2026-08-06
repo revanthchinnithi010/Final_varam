@@ -4,8 +4,6 @@ import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import type { AlertEngine } from "../services/AlertEngine.js";
 
-import { ALERT_SYMBOLS } from "../lib/symbols.js";
-
 const DRAWING_TYPES = ["trendline","ray","horizontal_line","rectangle","channel"] as const;
 const TRENDLINE_CONDITIONS = ["touch","break","retest","cross_above","cross_below","breakout","atr_proximity"] as const;
 const ZONE_CONDITIONS = ["enter_zone","exit_zone","breakout","rejection"] as const;
@@ -13,7 +11,7 @@ const PRICE_CONDITIONS = ["above_price","below_price","touch_price"] as const;
 const ALL_CONDITIONS = [...TRENDLINE_CONDITIONS, ...ZONE_CONDITIONS, ...PRICE_CONDITIONS] as const;
 
 const CreateTrendlineBody = z.object({
-  symbol:            z.string().toUpperCase().refine(s => (ALERT_SYMBOLS as readonly string[]).includes(s), { message: "Unsupported symbol" }),
+  symbol:            z.string().min(1).toUpperCase(),
   timeframe:         z.string().default("1H"),
   point1Price:       z.number().positive(),
   point1Time:        z.string().datetime(),

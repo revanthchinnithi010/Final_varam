@@ -3,10 +3,9 @@ import { db, alertsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { AlertEngine } from "../services/AlertEngine.js";
-import { ALERT_SYMBOLS } from "../lib/symbols.js";
 
 const CreateAlertBody = z.object({
-  symbol:          z.enum(ALERT_SYMBOLS),
+  symbol:          z.string().min(1).toUpperCase(),
   condition:       z.enum(["price_above","price_below","percent_change_up","percent_change_down"]),
   targetPrice:     z.number().positive(),
   message:         z.string().max(500).optional(),

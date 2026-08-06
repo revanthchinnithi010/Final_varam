@@ -3,10 +3,8 @@ import { db, zonesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import type { AlertEngine } from "../services/AlertEngine.js";
-import { ALERT_SYMBOLS } from "../lib/symbols.js";
-
 const CreateZoneBody = z.object({
-  symbol:          z.string().toUpperCase().refine(s => (ALERT_SYMBOLS as readonly string[]).includes(s), { message: "Unsupported symbol" }),
+  symbol:          z.string().min(1).toUpperCase(),
   upperPrice:      z.number().positive(),
   lowerPrice:      z.number().positive(),
   zoneType:        z.enum(["supply","demand","support_resistance","order_block"]).default("support_resistance"),
