@@ -55,22 +55,26 @@ function stripProtocol(domain) {
 }
 
 function getDeploymentDomain() {
-  if (process.env.REPLIT_INTERNAL_APP_DOMAIN) {
-    return stripProtocol(process.env.REPLIT_INTERNAL_APP_DOMAIN);
+  if (process.env.EXPO_PUBLIC_DOMAIN) {
+    return stripProtocol(process.env.EXPO_PUBLIC_DOMAIN);
+  }
+
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return stripProtocol(process.env.RAILWAY_PUBLIC_DOMAIN);
   }
 
   if (process.env.REPLIT_DEV_DOMAIN) {
     return stripProtocol(process.env.REPLIT_DEV_DOMAIN);
   }
 
-  if (process.env.EXPO_PUBLIC_DOMAIN) {
-    return stripProtocol(process.env.EXPO_PUBLIC_DOMAIN);
+  if (process.env.REPLIT_INTERNAL_APP_DOMAIN) {
+    return stripProtocol(process.env.REPLIT_INTERNAL_APP_DOMAIN);
   }
 
-  console.error(
-    "ERROR: No deployment domain found. Set REPLIT_INTERNAL_APP_DOMAIN, REPLIT_DEV_DOMAIN, or EXPO_PUBLIC_DOMAIN",
+  console.warn(
+    "WARNING: No deployment domain env var found (EXPO_PUBLIC_DOMAIN, RAILWAY_PUBLIC_DOMAIN, REPLIT_DEV_DOMAIN, REPLIT_INTERNAL_APP_DOMAIN). Falling back to localhost.",
   );
-  process.exit(1);
+  return "localhost";
 }
 
 function prepareDirectories(timestamp) {
