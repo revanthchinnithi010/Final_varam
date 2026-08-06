@@ -509,7 +509,56 @@ function updateManifests(manifests, timestamp, baseUrl, assetsByHash) {
   console.log("Manifests updated");
 }
 
+function isRailway() {
+  return !!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PUBLIC_DOMAIN);
+}
+
+async function buildWebApp() {
+  console.log("Railway environment detected — building React Web application...");
+
+  const env = {
+    ...process.env,
+    // vite.config.ts requires PORT at build time; use 3000 as a build-time
+    // placeholder (Railway overrides PORT at runtime; it does not affect output).
+    PORT: process.env.PORT || "3000",
+    // Serve from the root path on Railway.
+    BASE_PATH: process.env.BASE_PATH || "/",
+    // Suppress Replit-only plugins.
+    NODE_ENV: process.env.NODE_ENV || "production",
+  };
+
+  await new Promise((resolve, reject) => {
+    const proc = spawn(
+      "pnpm",
+      ["--filter", "@workspace/trading-journal", "run", "build"],
+      {
+        stdio: "inherit",
+        cwd: workspaceRoot,
+        env,
+      },
+    );
+
+    proc.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`React Web build exited with code ${code}`));
+      }
+    });
+
+    proc.on("error", reject);
+  });
+
+  console.log("React Web build complete.");
+  process.exit(0);
+}
+
 async function main() {
+  if (isRailway()) {
+    await buildWebApp();
+    return;
+  }
+
   console.log("Building static Expo Go deployment...");
 
   setupSignalHandlers();
