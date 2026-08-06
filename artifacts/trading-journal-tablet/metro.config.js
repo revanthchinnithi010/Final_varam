@@ -28,12 +28,20 @@ config.resolver.unstable_enablePackageExports = false;
 //    (e.g. @expo-google-fonts/inter fonts), causing font-loading to stall.
 config.resolver.unstable_enableSymlinks = true;
 
-// 5. Exclude .local (Replit skills/integrations metadata) from Metro's
-//    file watcher. Metro watches the entire monorepo root (see watchFolders
-//    above), so any directory deletion inside .local/skills causes Metro's
-//    FallbackWatcher to throw ENOENT and crash the bundler.
+// 5. Exclude paths that can vanish at runtime from Metro's file watcher.
+//    Metro watches the entire monorepo root (see watchFolders above), so any
+//    directory that disappears after the initial walk causes FallbackWatcher
+//    to throw ENOENT and crash the bundler.
+//
+//    - .local/  — Replit skills/integrations metadata (directories are deleted
+//                 by the platform while Metro is running)
+//    - drizzle-orm_tmp_*/  — drizzle-orm creates temporary directories during
+//                 its postinstall step and removes them afterwards; Metro
+//                 encounters them in the pnpm virtual store and tries to watch
+//                 them, but they no longer exist by the time expo start runs.
 config.resolver.blockList = [
   /\/\.local\/.*/,
+  /\/drizzle-orm_tmp_[^/]+\/.*/,
 ];
 
 module.exports = config;
