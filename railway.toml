@@ -1,0 +1,6 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pnpm install --frozen-lockfile && PORT=3000 BASE_PATH=/ pnpm --filter @workspace/trading-journal build"
+
+[deploy]
+startCommand = "BASE_PATH=/ pnpm --filter @workspace/trading-journal serve"
