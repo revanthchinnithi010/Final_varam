@@ -186,10 +186,10 @@ export function createDeltaOAuthRouter(): Router {
         const acc = row.rows[0] as { id: number; label: string; api_token: string };
         return res.json({ ok: true, accountId: acc.id, apiToken: acc.api_token, label: acc.label });
       }
-      res.status(404).json({ ok: false, error: "No pending Delta account" });
+      return res.status(404).json({ ok: false, error: "No pending Delta account" });
     } catch (err) {
       logger.warn({ err }, "delta/oauth/pending-account: DB error");
-      res.status(500).json({ ok: false, error: "DB error" });
+      return res.status(500).json({ ok: false, error: "DB error" });
     }
   });
 

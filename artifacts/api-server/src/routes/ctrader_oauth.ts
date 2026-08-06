@@ -301,7 +301,7 @@ export function createCtraderOAuthRouter(): Router {
       });
     } catch (err) {
       logger.warn({ err }, "ctrader/oauth/status: DB error");
-      res.status(500).json({ connected: false, error: "DB error" });
+      return res.status(500).json({ connected: false, error: "DB error" });
     }
   });
 
@@ -319,7 +319,7 @@ export function createCtraderOAuthRouter(): Router {
       });
     } catch (err) {
       logger.warn({ err }, "ctrader/oauth/token: error");
-      res.status(500).json({ ok: false, error: "Server error" });
+      return res.status(500).json({ ok: false, error: "Server error" });
     }
   });
 
@@ -874,7 +874,7 @@ export function createCtraderOAuthRouter(): Router {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "unknown";
       logger.error({ err }, "ctrader/oauth/accounts: unhandled error");
-      res.status(500).json({
+      return res.status(500).json({
         ok: false, error: msg,
         raw: "", http_status: 500, accounts: null,
       });
@@ -949,7 +949,7 @@ export function createCtraderOAuthRouter(): Router {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "unknown";
       logger.error({ err }, "ctrader/oauth/symbols: error");
-      res.status(500).json({ ok: false, error: msg, raw: "", http_status: 500 });
+      return res.status(500).json({ ok: false, error: msg, raw: "", http_status: 500 });
     }
   });
 
@@ -1003,7 +1003,7 @@ export function createCtraderOAuthRouter(): Router {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "unknown";
       logger.error({ err }, "ctrader/oauth/refresh: failed");
-      res.status(502).json({ ok: false, error: msg });
+      return res.status(502).json({ ok: false, error: msg });
     }
   });
 
